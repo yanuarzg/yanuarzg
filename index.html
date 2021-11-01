@@ -1,357 +1,308 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style>  
-/*-------------------------------------------
+  <style>
+    * {
+  font-family: 'Lato', sans-serif;
+}
 
-> Personal Landing Page
+p {
+  font-size: 16px;
+}
 
-@matovanig
---------------------------------------------*/
-
-/* style version
-#1
-  img: dave_1
-  color: #00838f
-
-#2 **
-  img: dave_2
-  color: #24292e
-*/
-
-
-// VARIABLES
-//---------------------------------
-
-// colors
-$white: #FFF;
-$gray: #BDBDBD;
-$gray-dark: #24292e;
-
-// fonts 
-$pt-font: 'PT Sans Narrow', sans-serif;
-$opensans-font: 'Open Sans', sans-serif;
-
-
-// about
-$background__container--about: $gray-dark;
-$color__container--about: $white;
-$image__container--about: 'http://www.mantovanig.it/media/landing_dave_2.jpg';
-$font__title--about: $pt-font;
-$font__text--about: $opensans-font;
-
-// nav
-$nav__item--unselected: $gray;
-$nav__item--selected: $white;
-$font__nav__item: $opensans-font;
-
-// buttons
-$color__button--contact: $white;
-$background__button--main: $white;
-$color__button--main: $gray-dark;
-$font__button--contant: $opensans-font;
-
-//----------------------------------------
-
-body {
-  position: relative;
+.siteNav {
+  background-color: #eeeeee;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
   padding: 0;
+  margin: 0;
+  position: fixed;
+  width: 100vw;
+  z-index: 100;
+}
+
+nav ul {
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li,
+.siteNav p {
+  display: inline-block;
+  padding: 15px 0 15px 0;
   margin: 0;
 }
 
-.container {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+nav ul li a {
+  padding: 15px;
+}
+
+nav ul li a:hover {
+  background-color: white;
+}
+
+a {
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+.buttonLinks a {
+  border-radius: 7px;
+  border: 2px solid black;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+  margin: 0 5px 0 5px;
+  padding: 10px 15px 10px 15px;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.buttonLinks a:hover {
+  background-color: black;
+  color: white;
+}
+
+.jumbo {
+  min-height: 500px;
+  padding-top: 100px;
+  padding-bottom: 100px;
+}
+
+.jumbo h1 {
+  line-height: 2em;
+}
+
+.jumbo p {
+  margin: 2em 0 2em 0;
+}
+
+.displayJumbo {
+  background: -webkit-linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
+  background: -moz-linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
+  background: -o-linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
+  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
+  background-size: cover;
+  padding-top: 200px;
+  padding-bottom: 200px;
   height: 100vh;
-  width: 100%;
 }
 
-.container__block {
-  flex: 0 0 50%;
-  height: 100%;
-  
-  .content {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  
-  #avatar {
-    width: 95px;
-    border-radius: 50%;
-  }
+.displayJumbo h1 {
+  color: white;
 }
 
-.container__block--left {
-  order: 1;
+.aboutJumbo {
+  background-color: rgba(200, 200, 200, 0.5);
 }
 
-.container__block--right {
-  order: 2;
+.portfolioJumbo {
+  background-color: rgba(200, 200, 200, 0.5);
 }
 
-.button--main {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  margin: auto;
-  width: 80px;
-  height: 80px;
-  background-color: $background__button--main;
-  border: none;
-  padding: 20px;
-  box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.3);
-  
-  .icon i {
-    font-size: 40px;
-    color: $color__button--main;
-    line-height: 1;
-  }
- 
+.contactJumbo {
+  background: url(http://www.publicdomainpictures.net/pictures/10000/velka/1-1249480527aTii.jpg) center center fixed;
+  background-size: cover;
 }
 
-.button--contact {
-  position: fixed;
-  top: 20px;
-  right: 40px;
-  padding: 8px 25px;
-  background: transparent;
-  border: solid 1px $color__button--contact;
-  
-  .text {
-    color: $color__button--contact;
-    font-family: $font__button--contant;
-    font-size: 14px;   
-    display: inline-block;
-    vertical-align: middle;
-  }
-  
-  .icon {
-    display: inline-block;
-    vertical-align: middle;
-  }
-  
-  .icon i {
-    font-size: 20px;
-    padding-right: 10px;
-    color: $color__button--contact;
-    vertical-align: middle;
-  }
-}
-
-.nav {
-  position: fixed;
+.centerVertically {
+  position: static;
   top: 50%;
   transform: translateY(-50%);
-  left: 20px;
-  display: flex;
-  flex-direction: column;
-  display: none;
-  
-  li {
-    list-style-type: none;
-    position: relative;
-    padding: 10px;
-    
-    &:before,
-    &:after {
-      content: '';
-      height: 50%;
-      position: absolute;
-      left: 16px;
-      width: 1px;
-      background-color: $nav__item--selected;    
-    }
-    
-    &:before {
-      top: 0;
-    }
-    
-    &:after {
-      bottom: 0;   
-    }
-    
-    &:nth-last-child(1) {
-      &:after {
-        display: none;
-      }
-    }
-    
-    &:nth-child(1) {
-      &:before {
-        display: none;
-      }
-    }
-  }
 }
 
-.nav__item {
-  text-decoration: none;
-
-  .text {
-    color: $nav__item--unselected;
-    font-family: $font__nav__item;
-    opacity: 0.6;   
-  }
-  
-  &.selected {
-    .text {
-      color: $nav__item--selected;
-      opacity: 1;
-      text-shadow: 0 0 5px #000;
-    }
-  }
-  
-  &:before {
-    content: '';
-    display: inline-block;
-    vertical-align: middle;
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
-    background-color: $white;
-    margin-right: 10px;
-    margin-top: -2px;
-  }
+.noInlineLinks li {
+  display: list-item;
+  list-style: none;
 }
 
-// About
-.container--about {
-  
-  .container__block--right {
-    background-color: $background__container--about;
-    color: $color__container--about;
-    text-align: center;
-
-    h1 {
-      font-family: $font__title--about;
-      letter-spacing: 3px;
-      padding-bottom: 0;
-      margin-bottom: 5px;
-    }
-    
-    h4 {
-      font-family: $font__title--about;
-      letter-spacing: 1.5px;
-      padding-top: 0;
-      padding-bottom: 20px;
-      font-size: 1.2em;
-      margin-top: 0;
-      font-style: italic;
-    }
-    
-    h3 {
-      font-family: $font__title--about;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 5px;
-    }
-    
-    .tags {
-      display: block;
-      padding-bottom: 30px;
-      
-      span {
-        padding: 0 10px;
-      }
-    }
-    
-    .content {
-      padding: 0 70px;
-      font-family: $font__text--about;
-      
-      p {
-        letter-spacing: 1px;
-        padding-bottom: 10px;
-      }
-    }
-    
-    .social {
-      a {
-        text-decoration: none;
-        color: $white;
-      }
-      
-      i {
-        font-size: 1.7em;
-        padding: 0 10px;
-      }
-    }
-    
-    button {
-      background: transparent;
-      border: solid 1px $color__container--about;
-      padding: 10px 35px;
-      text-align: center;
-      font-family: $font__text--about;
-      color: $color__container--about;
-      margin: 20px 0;
-      font-size: 16px;
-    }
-  }
-  
-   .container__block--left {
-    background-image: url($image__container--about);
-    background-size: cover;
-    background-repeat: no-repeat;  
-  }
+.projectBox {
+  border: 1px solid black;
+  height: 300px;
+  overflow-y: auto;
 }
-</style>
+
+.projectBox h2 {
+  text-align: center;
+}
+
+footer,
+footer p {
+  font-size: 12px;
+}
+
+footer li::before {
+  content: '|';
+}
+
+footer li:nth-child(1)::before {
+  content: '';
+  margin-left: -15px;
+}
+
+.circleFace {
+  height: 300px;
+  width: 300px;
+  border-radius: 50%;
+  border: 1px solid black;
+  float: right;
+  margin: 30px;
+  background: url(https://avatars3.githubusercontent.com/u/7306176?v=3&s=460) center center;
+  background-size: cover;
+}
+
+.dividerJumbo {
+  background: url(https://i.imgur.com/D7rw2v5.jpg) center center fixed;
+  background-size: cover;
+  height: 50vh;
+}
+.subtitle {
+  color: white;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+  </style>
 </head>
 <body>
-<section id="about" class="container container--about">
-
-  <div class="container__block container__block--left"></div>
-  
-  <div class="container__block container__block--right">
-    <div class="content">
-      <img id="avatar" src="http://www.mantovanig.it/media/avatar.jpg" />
-      <h1>GABRIELE MANTOVANI</h1>
-      <h4>- User Interface developer -</h4>
-      <p>I'm a scripter, with  great interest for user interfaces and user experience research. I'm fascinated by the world of digital technology and startups.</p>
-<!--       <h3>My 5 favourite hashtag</h3> -->
-      <div class="tags"><span>#javascript</span><span>#UserExperience</span><span>#npm</span><span>#UI</span><span>#retro</span></div>
-      <div class="social">
-        <a href="#"><i class="icons ion-social-twitter"></i></a>
-        <a href="#"><i class="icons ion-social-github"></i></a>
-        <a href="#"><i class="icons ion-social-linkedin"></i></a>
+<header class="siteNav">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <p>William Nguyen</p>
       </div>
-      
+      <div class="col-md-8 text-right">
+        <nav>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#portfolio">Portfolio</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
+</header>
 
+<a name="home"></a>
+<section class="jumbo displayJumbo text-center">
+  <div class="container centerVertically">
+    <h1>William H. Nguyen</h1>
+    <p class="subtitle">Let your fire pave your journey</p>
+    <hr>
+    <nav class="buttonLinks">
+      <ul>
+        <li><a href="https://www.facebook.com/williamhnguyen"><i class="fa fa-facebook"></i> Facebook</a></li>
+        <li><a href="https://www.twitter.com/willhnguyen"><i class="fa fa-twitter"></i> Twitter</a></li>
+        <li><a href="https://www.github.com/willhnguyen"><i class="fa fa-github"></i> Github</a></li>
+        <li><a href="https://www.freecodecamp.com/willhnguyen"><i class="fa"></i> freeCodeCamp</a></li>
+      </ul>
+    </nav>
+  </div>
 </section>
 
-<button class="button button--main">
-  <!--  <span class="icon"><i class="material-icons">email</i></span>  -->
-  <span class="icon"><i class="icons ion-android-mail"></i></span> 
-</button>
 
-<!-- <button class="button button--contact">
-  <span class="icon"><i class="material-icons">email</i></span>
-  <span class="text">Contact Me</span>
-</button> -->
+<a name="about"></a>
+<section class="jumbo aboutJumbo">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>About Me</h1>
+        <div class="circleFace"> </div>
+        <p>Hey! My name is William, and I am an aspiring software developer. I recently graduated from the University of California, Davis with Bachelor of Science in Computer Science.</p>
+        <p>My skill set includes the following:</p>
+        <ul>
+          <li><b>Programming Langauges:</b> C++, C, Java, JavaScript, Swift, HTML, CSS, Matlab</li>
+          <li><b>Libraries and Frameworks:</b> OpenGL, GL Shading Language (GLSL), Ionic Framework</li>
+          <li><b>Operating Systems:</b> Mac OS X, Windows, Linux (Ubuntu), Unix</li>
+          <li><b>IDEs:</b> Xcode, Interface Builder, Qt</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
-<nav class="nav">
-  <li>
-    <a class="nav__item selected" href="#about">
-      <span class="text">About Me</span>
-    </a>
-  </li>
-  <li>
-    <a class="nav__item" href="#projects">
-      <span class="text">Projects</span>
-    </a>
-  </li>
-  <li>
-    <a class="nav__item" href="#contacts">
-      <span class="text">Contacts</span>
-    </a>
-  </li>
-</nav>
+<section class="dividerJumbo">
+</section>
+
+<a name="portfolio"></a>
+<section class="jumbo portfolioJumbo">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>Portfolio</h1>
+        <p>Below are a few of the projects I've been involved in at University. FreeCodeCamp projects coming soon!</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4 projectBox">
+        <img src="" alt="UCD Eats Thumbnail" width="100%">
+        <h2>UCD Eats</h2>
+<!--        <p>Jan. 2015 - June 2015</p>
+        <ul>
+          <li>Collaborated with a team to create a mobile app to present and log nutrition information of the foods at the UC Davis Coffee House</li>
+          <li>Implemented UI features</li>
+          <li>Fixed incorrect layouts</li>
+        </ul>-->
+      </div>
+      <div class="col-md-4 projectBox">
+        <img src="" alt="Image Matching Thumbnail" width="100%">
+        <h2>Image Matching</h2>
+<!--        <p>May 2015</p>
+        <ul>
+          <li>Created a Matlab script to compare an image with an image database to find the most similar images</li>
+        </ul>-->
+      </div>
+      <div class="col-md-4 projectBox">
+        <img src="" alt="Graphics Pipeline Thumbnail" width="100%">
+        <h2>Graphics Pipeline and Shaders</h2>
+        <!--<p>Oct. 2014 - Nov. 2014</p>
+        <ul>
+          <li>Rewrote the graphics pipeline to use the CPU</li>
+          <li>Wrote vertex and fragment shaders to calculate lighting and textures using either Gouraud or Phong shading</li>
+        </ul>-->
+      </div>
+    </div>
+  </div>
+</section>
+
+<a name="contact"></a>
+<section class="jumbo contactJumbo">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <h1>Contact</h1>
+        <p></p>
+      </div>
+      <div class="col-md-6">
+        <nav class="buttonLinks noInlineLinks text-right">
+          <ul>
+            <li><a href="https://www.facebook.com/williamhnguyen"><i class="fa fa-facebook"></i> Facebook</a></li>
+            <li><a href="https://www.twitter.com/willhnguyen"><i class="fa fa-twitter"></i> Twitter</a></li>
+            <li><a href="https://www.github.com/willhnguyen"><i class="fa fa-github"></i> Github</a></li>
+            <li><a href="https://www.freecodecamp.com/willhnguyen"><i class="fa"></i> freeCodeCamp</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <nav>
+          <ul class="footerNav">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#portfolio">Portfolio</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </nav>
+        <p>Copyright &copy; William H. Nguyen 2015. All Rights Reserved</p>
+      </div>
+    </div>
+  </div>
+</footer>
   </body>
 </html>
