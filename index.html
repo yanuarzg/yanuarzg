@@ -2,307 +2,165 @@
 <html>
 <head>
   <style>
-    * {
-  font-family: 'Lato', sans-serif;
+    @import url('https://fonts.googleapis.com/css?family=Raleway:400,700');
+
+@keyframes tooltip {
+  to {
+    opacity: .9;
+    transform: translate(-50%, -9px);
+  }
 }
 
-p {
-  font-size: 16px;
-}
-
-.siteNav {
-  background-color: #eeeeee;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+body, h1, h2, h3, p {
   padding: 0;
   margin: 0;
+  font-family: Raleway, sans-serif;
+}
+
+.wrapper {
+  .background {
+    position: fixed;
+    top: -20px;
+    left: -20px;
+    width: 110%;
+    height: 110%;
+    background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/241793/_MG_4965.jpg);
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px);
+    z-index: -2;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .25);
+    z-index: -1;
+  }
+}
+
+.content {
   position: fixed;
-  width: 100vw;
-  z-index: 100;
-}
-
-nav ul {
-  margin: 0;
-  padding: 0;
-}
-
-nav ul li,
-.siteNav p {
-  display: inline-block;
-  padding: 15px 0 15px 0;
-  margin: 0;
-}
-
-nav ul li a {
-  padding: 15px;
-}
-
-nav ul li a:hover {
-  background-color: white;
-}
-
-a {
-  color: inherit;
-}
-
-a:hover {
-  text-decoration: none;
-}
-
-.buttonLinks a {
-  border-radius: 7px;
-  border: 2px solid black;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
-  margin: 0 5px 0 5px;
-  padding: 10px 15px 10px 15px;
-  background-color: rgba(255, 255, 255, 0.7);
-}
-
-.buttonLinks a:hover {
-  background-color: black;
-  color: white;
-}
-
-.jumbo {
-  min-height: 500px;
-  padding-top: 100px;
-  padding-bottom: 100px;
-}
-
-.jumbo h1 {
-  line-height: 2em;
-}
-
-.jumbo p {
-  margin: 2em 0 2em 0;
-}
-
-.displayJumbo {
-  background: -webkit-linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
-  background: -moz-linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
-  background: -o-linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
-  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(http://img08.deviantart.net/cb77/i/2012/122/1/a/landscape_wallpaper_by_nickchoubg-d4yaep3.png) center center fixed;
-  background-size: cover;
-  padding-top: 200px;
-  padding-bottom: 200px;
-  height: 100vh;
-}
-
-.displayJumbo h1 {
-  color: white;
-}
-
-.aboutJumbo {
-  background-color: rgba(200, 200, 200, 0.5);
-}
-
-.portfolioJumbo {
-  background-color: rgba(200, 200, 200, 0.5);
-}
-
-.contactJumbo {
-  background: url(http://www.publicdomainpictures.net/pictures/10000/velka/1-1249480527aTii.jpg) center center fixed;
-  background-size: cover;
-}
-
-.centerVertically {
-  position: static;
+  font-size: 1.2em;
   top: 50%;
-  transform: translateY(-50%);
-}
-
-.noInlineLinks li {
-  display: list-item;
-  list-style: none;
-}
-
-.projectBox {
-  border: 1px solid black;
-  height: 300px;
-  overflow-y: auto;
-}
-
-.projectBox h2 {
-  text-align: center;
-}
-
-footer,
-footer p {
-  font-size: 12px;
-}
-
-footer li::before {
-  content: '|';
-}
-
-footer li:nth-child(1)::before {
-  content: '';
-  margin-left: -15px;
-}
-
-.circleFace {
-  height: 300px;
-  width: 300px;
-  border-radius: 50%;
-  border: 1px solid black;
-  float: right;
-  margin: 30px;
-  background: url(https://avatars3.githubusercontent.com/u/7306176?v=3&s=460) center center;
-  background-size: cover;
-}
-
-.dividerJumbo {
-  background: url(https://i.imgur.com/D7rw2v5.jpg) center center fixed;
-  background-size: cover;
-  height: 50vh;
-}
-.subtitle {
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: white;
-  font-weight: 900;
-  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 1px 5px 5px #353535;
+  width: 90%;
+
+  h1 {
+    line-height: 0.9;
+    margin-bottom: 0.1em;
+  }
+
+  h3 {
+    font-weight: 400;
+  }
+
+  a {
+    display: inline-block;
+    color: white;
+    font-size: 1.25em;
+    margin: 0.15em 0.25em 0 0;
+    padding: 0.25em;
+    transition: color 0.1s;
+    cursor: pointer;
+    transition: all 200ms;
+
+    &:first-of-type {
+      margin-left: -0.25em;
+    }
+
+    &:hover {
+      color: rgba(255, 255, 255, .9);
+      text-shadow: 1px 3px 3px rgba(53, 53, 53, .9);
+    }
+  }
+
+  @media(min-width: 500px) {
+    font-size: 1.5em;
+  }
+
+  @media(min-width: 768px) {
+    font-size: 2em;
+  }
+  
+  @media(min-width: 1280px) {
+    font-size: 2.5em;
+  }
+}
+
+@media(min-width: 768px) {
+  [tooltip] {
+    position: relative;
+
+    &:before, &:after {
+      position: absolute;
+      display: none;
+      opacity: 0;
+      left: 50%;
+      transform: translate(-50%, 0);
+      text-transform: none;
+      font-size: 0.35em;
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+      will-change: transform; 
+    }
+
+    &:before {
+      content: '';
+      top: calc(100% + 0.25em);
+      border: 5px solid transparent;
+      z-index: 1001;
+      border-top-width: 0;
+      border-bottom-color: white;
+    }
+
+    &:after {
+      content: attr(tooltip);
+      top: calc(100% +  0.5em);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0.55em 0.75em;
+      border-radius: 0.25em;
+      text-shadow: none;
+      box-shadow: 1px 3px 3px rgba(53, 53, 53, .9);
+      background: white;
+      color: black;
+      z-index: 1000;
+    }
+
+    &:hover:before,
+    &:hover:after {
+      display: block;
+      animation: tooltip 200ms ease-out forwards;
+    }
+  }
 }
   </style>
 </head>
 <body>
-<header class="siteNav">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-4">
-        <p>William Nguyen</p>
-      </div>
-      <div class="col-md-8 text-right">
-        <nav>
-          <ul>
-            <li><a href="#home">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#portfolio">Portfolio</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-        </nav>
-      </div>
+<div class="wrapper">
+  <div class="background"></div>
+  <div class="overlay"></div>
+  <div class="content">
+    <h1>Michael Weaver</h1>
+    <h3>Web Developer & Photographer</h3>
+    <div class="links">
+      <a target="_blank" tooltip="LinkedIn" href="https://www.linkedin.com/in/michael-weaver-8296017b"><i class="fa fa-linkedin-square"></i></a>
+      <a target="_blank" tooltip="Word Resume" href="http://mjweaver01.com/data/uploads/Weaver_Michael_Resume.docx"><i class="fa fa-file-word-o"></i></a>
+      <a target="_blank" tooltip="PDF Resume" href="http://mjweaver01.com/data/uploads/Weaver_Michael_Resume.pdf"><i class="fa fa-file-pdf-o"></i></a>
+      <a target="_blank" tooltip="Codepen" href="https://codepen.io/mjweaver01"><i class="fa fa-codepen"></i></a>
+      <a target="_blank" tooltip="Photography" href="https://codepen.io/mjweaver01/live/XzRqvY"><i class="fa fa-camera-retro"></i></a>
     </div>
   </div>
-</header>
-
-<a name="home"></a>
-<section class="jumbo displayJumbo text-center">
-  <div class="container centerVertically">
-    <h1>William H. Nguyen</h1>
-    <p class="subtitle">Let your fire pave your journey</p>
-    <hr>
-    <nav class="buttonLinks">
-      <ul>
-        <li><a href="https://www.facebook.com/williamhnguyen"><i class="fa fa-facebook"></i> Facebook</a></li>
-        <li><a href="https://www.twitter.com/willhnguyen"><i class="fa fa-twitter"></i> Twitter</a></li>
-        <li><a href="https://www.github.com/willhnguyen"><i class="fa fa-github"></i> Github</a></li>
-        <li><a href="https://www.freecodecamp.com/willhnguyen"><i class="fa"></i> freeCodeCamp</a></li>
-      </ul>
-    </nav>
-  </div>
-</section>
-
-
-<a name="about"></a>
-<section class="jumbo aboutJumbo">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <h1>About Me</h1>
-        <div class="circleFace"> </div>
-        <p>Hey! My name is William, and I am an aspiring software developer. I recently graduated from the University of California, Davis with Bachelor of Science in Computer Science.</p>
-        <p>My skill set includes the following:</p>
-        <ul>
-          <li><b>Programming Langauges:</b> C++, C, Java, JavaScript, Swift, HTML, CSS, Matlab</li>
-          <li><b>Libraries and Frameworks:</b> OpenGL, GL Shading Language (GLSL), Ionic Framework</li>
-          <li><b>Operating Systems:</b> Mac OS X, Windows, Linux (Ubuntu), Unix</li>
-          <li><b>IDEs:</b> Xcode, Interface Builder, Qt</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="dividerJumbo">
-</section>
-
-<a name="portfolio"></a>
-<section class="jumbo portfolioJumbo">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <h1>Portfolio</h1>
-        <p>Below are a few of the projects I've been involved in at University. FreeCodeCamp projects coming soon!</p>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-4 projectBox">
-        <img src="" alt="UCD Eats Thumbnail" width="100%">
-        <h2>UCD Eats</h2>
-<!--        <p>Jan. 2015 - June 2015</p>
-        <ul>
-          <li>Collaborated with a team to create a mobile app to present and log nutrition information of the foods at the UC Davis Coffee House</li>
-          <li>Implemented UI features</li>
-          <li>Fixed incorrect layouts</li>
-        </ul>-->
-      </div>
-      <div class="col-md-4 projectBox">
-        <img src="" alt="Image Matching Thumbnail" width="100%">
-        <h2>Image Matching</h2>
-<!--        <p>May 2015</p>
-        <ul>
-          <li>Created a Matlab script to compare an image with an image database to find the most similar images</li>
-        </ul>-->
-      </div>
-      <div class="col-md-4 projectBox">
-        <img src="" alt="Graphics Pipeline Thumbnail" width="100%">
-        <h2>Graphics Pipeline and Shaders</h2>
-        <!--<p>Oct. 2014 - Nov. 2014</p>
-        <ul>
-          <li>Rewrote the graphics pipeline to use the CPU</li>
-          <li>Wrote vertex and fragment shaders to calculate lighting and textures using either Gouraud or Phong shading</li>
-        </ul>-->
-      </div>
-    </div>
-  </div>
-</section>
-
-<a name="contact"></a>
-<section class="jumbo contactJumbo">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <h1>Contact</h1>
-        <p></p>
-      </div>
-      <div class="col-md-6">
-        <nav class="buttonLinks noInlineLinks text-right">
-          <ul>
-            <li><a href="https://www.facebook.com/williamhnguyen"><i class="fa fa-facebook"></i> Facebook</a></li>
-            <li><a href="https://www.twitter.com/willhnguyen"><i class="fa fa-twitter"></i> Twitter</a></li>
-            <li><a href="https://www.github.com/willhnguyen"><i class="fa fa-github"></i> Github</a></li>
-            <li><a href="https://www.freecodecamp.com/willhnguyen"><i class="fa"></i> freeCodeCamp</a></li>
-          </ul>
-        </nav>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <nav>
-          <ul class="footerNav">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#portfolio">Portfolio</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-        </nav>
-        <p>Copyright &copy; William H. Nguyen 2015. All Rights Reserved</p>
-      </div>
-    </div>
-  </div>
-</footer>
+</div>
   </body>
 </html>
