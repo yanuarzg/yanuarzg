@@ -1,0 +1,135 @@
+<b:includable id='pager_chapter' var='type'>
+  <b:if cond='not(data:posts any (p =&gt; p.labels any (l =&gt; l.name in [&quot;Novel&quot;,&quot;Manga&quot;,&quot;Anime&quot;])))'>
+    <b:if expr:cond='data:post.labels any (l =&gt; l.name == data:type.name)'><script type='text/javascript'>var selectchap = true;</script></b:if>
+    <b:if expr:cond='data:post.labels any (l =&gt; l.name != data:type.name)'><script type='text/javascript'>var selectchap = false;</script></b:if>
+    <b:loop index='i' values='data:post.labels' var='label'>
+      <b:if cond='data:i == 0'>
+        <div class='pager-js flex' id='pager-js'>
+          <a class='pager-js-nolink' id='prevjs'></a>
+          <a class='pager-js-nolink' id='indexjs'></a>
+          <a class='pager-js-nolink' id='nextjs'></a>
+        </div>
+        <script type='text/javascript'>
+        var postPrev = &quot;<span class='flex btn-primary ai-c'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'><path fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m15 5l-6 7l6 7'/></svg></span>&quot;;
+        var postNext = &quot;<span class='flex btn-primary ai-c'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'><path fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m9 5l6 7l-6 7'/></svg></span>&quot;;
+        var postIndex = &quot;<span class='flex btn-primary ai-c'><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.5'><path stroke-linecap='round' d='M21 6H3m18 4H3m8 4H3m8 4H3'/><path d='M18.875 14.118c1.654.955 2.48 1.433 2.602 2.121a1.5 1.5 0 0 1 0 .521c-.121.69-.948 1.167-2.602 2.121c-1.654.955-2.48 1.433-3.138 1.194a1.499 1.499 0 0 1-.451-.261c-.536-.45-.536-1.404-.536-3.314c0-1.91 0-2.865.536-3.314a1.5 1.5 0 0 1 .451-.26c.657-.24 1.484.238 3.138 1.192Z'/></g></svg></span>&quot;;
+        var postID = <data:post.id/>;
+        /*<![CDATA[*/
+          if (selectchap == false) { var yktocs = function (data) { var entriesHtml = []; if (data.feed && data.feed.entry) { for (var i = 0; i < data.feed.entry.length; i++) { for (var j = 0; j < data.feed.entry[i].link.length; j++) { if ("alternate" == data.feed.entry[i].link[j].rel) { var entityUrl = data.feed.entry[i].link[j].href; entriesHtml.push("<a href='" + entityUrl + "' title='Index Novel'>" + postIndex + "</a>"); break; } } } document.getElementById("indexjs").innerHTML = entriesHtml.join(""); } }; var ykpager = function (data) { var node = { postlist: [] }; var i = 0; for (; i < data.feed.entry.length; i++) { var j = 0; for (; j < data.feed.entry[i].link.length; j++) { if ("alternate" == data.feed.entry[i].link[j].rel) { var murl = data.feed.entry[i].link[j].href; break; } } var videoId = data.feed.entry[i].id.$t; var CAPTURE_ID = videoId.substr(51, 19); node.postlist.push({ url: murl, id: CAPTURE_ID }); } var v = node.postlist.findIndex((timeline_mode) => { return timeline_mode.id == postID; }); var id = v + 1; var cbs = node.postlist[id]; if (cbs) { var g = Object.values(cbs)[0]; var lnkDiv = document.getElementById("prevjs"); lnkDiv.innerHTML = "<a href='" + g + "' title='Chapter Sebelumnya'>" + postPrev + "</a>"; } var q = v - 1; var val = node.postlist[q]; if (val) { var k = Object.values(val)[0]; lnkDiv = document.getElementById("nextjs"); lnkDiv.innerHTML = "<a href='" + k + "' title='Chapter Selanjutnya'>" + postNext + "</a>"; } }; } else { var style = document.createElement('style'); style.textContent = '.pager-js{display:none;}'; document.head.appendChild(style); }
+        /*]]>*/
+        </script>
+        <script defer='defer' expr:src='&quot;/feeds/posts/summary/-/&quot; + data:label.name + &quot;?alt=json-in-script&amp;callback=ykpager&amp;max-results=999999&quot;' type='text/javascript'/>
+        <script defer='defer' expr:src='&quot;/feeds/posts/summary/-/&quot; + data:type.name + &quot;/&quot; + data:label.name + &quot;?orderby=published&amp;alt=json-in-script&amp;callback=yktocs&amp;max-results=1&quot;' type='text/javascript'/>
+      </b:if>
+    </b:loop>
+  </b:if>
+</b:includable>
+<b:includable id='select_chapter'>
+  <b:if cond='data:posts any (p =&gt; p.labels any (l =&gt; l.name in [&quot;Novel&quot;,&quot;Anime&quot;,&quot;Manga&quot;]))'>
+    <style>
+      #clOpen { display: block; opacity: 1; position: relative; width: calc(100vw - 10vw); background-color: transparent; border-radius: 0.5rem; top: 0.5rem; overflow:hidden; z-index: 0; } #clOpen .modal-content { position: relative!important ; overflow-y: scroll; width: calc(100% - 15%)!important; max-height: 40vh; margin: 0 0 1rem!important; padding: 0 0 0 1rem; } #clClose, #clOpen .subtitle { display: none; } .auto-listchap { padding: 1rem 0 0; } @media only screen and (max-width:768px) { #clOpen .modal-content {width: -webkit-fill-available!important;} }
+    </style>
+    </b:if>
+    <b:if cond='data:posts any (p =&gt; p.labels any (l =&gt; l.name in [&quot;Novel&quot;,&quot;Chapter&quot;,&quot;Anime&quot;,&quot;Manga&quot;]))'>
+    <!-- <b:if cond='data:label.name != &quot;Novel&quot; and data:label.name != &quot;Anime&quot; and data:label.name != &quot;Manga&quot;'> -->
+    <style> #clOpen .modal-content { inset: auto 0 0 0; position: absolute; width: -webkit-fill-available; margin: auto 5vw; } #pager-js span, #clBtn { min-height: 42px; } #nextjs { margin-left: 0.5rem; } @media only screen and (max-width:450px) { #clOpen .modal-content {margin: auto 0; } } </style>
+    <div class="flex column">
+    <span id="clBtn" class="flex pointer btn-primary g-05 ai-c"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" d="M21 6H3m18 4H3m8 4H3m8 4H3"/><path d="M18.875 14.118c1.654.955 2.48 1.433 2.602 2.121a1.5 1.5 0 0 1 0 .521c-.121.69-.948 1.167-2.602 2.121c-1.654.955-2.48 1.433-3.138 1.194a1.499 1.499 0 0 1-.451-.261c-.536-.45-.536-1.404-.536-3.314c0-1.91 0-2.865.536-3.314a1.5 1.5 0 0 1 .451-.26c.657-.24 1.484.238 3.138 1.192Z"/></g></svg> <span id='chap-num'></span></span>
+    <div id="clOpen" class="modal">
+      <div class="modal-content flex column shadow">
+        <div class="flex jc-sb">
+          <span class="subtitle">Episode List</span><span class="close" id="clClose">&amp;times;</span>
+        </div>
+        <b:loop values='data:post.labels' var='label'>
+          <script>
+            var postID = '<data:post.id/>';
+            var autlist = false;
+            var excludedLabels = ['Novel', 'Manga', 'Anime'];
+            var currentLabel = '<data:label.name/>';
+            var numChapters = 0;
+            var encounteredEntryIDs = {};
+            var hasExcludedLabel = false;
+            var hasChapterLabel = false;
+            var hasNonChapterLink = false; // Flag to track the presence of a link not belonging to "Chapter"
+            //<![CDATA[
+            // Check if the current label is in the excludedLabels array and set autlist accordingly
+            if (excludedLabels.indexOf(currentLabel) === -1) {
+              autlist = true;
+            } else if (currentLabel === 'Chapter') {
+              hasChapterLabel = true;
+            }
+            // Function to check if an entry should be displayed in the list
+            function shouldDisplayEntry(entryLabels) {
+              return (
+                autlist || (entryLabels.indexOf('Chapter') !== -1 && entryLabels.length > 1)
+              );
+            }
+            if (autlist || hasChapterLabel) {
+              function autolist(e) {
+                var listContainer = document.querySelector('.auto-listchap');
+                var chapNumElement = document.getElementById('chap-num');
+                var clOpenModal = document.getElementById('clOpen');
+                for (var t = 0; t < e.feed.entry.length; t++) {
+                  var entryLabels = [];
+                  var entryID = e.feed.entry[t].id.$t.substr(51, 19);
+                  var hasNonChapterLinkEntry = false; 
+                  for (var l = 0; l < e.feed.entry[t].category.length; l++) {
+                    var label = e.feed.entry[t].category[l].term;
+                    entryLabels.push(label);
+                    if (excludedLabels.indexOf(label) !== -1) {
+                      hasExcludedLabel = true;
+                    }
+                  }
+                  if (shouldDisplayEntry(entryLabels) && entryID !== postID && !encounteredEntryIDs[entryID]) {
+              var listItem = document.createElement('div');
+              var linkElement = document.createElement('a');
+              var dateElement = document.createElement('span'); // New element for the publication date
+              for (var r = 0; r < e.feed.entry[t].link.length; r++) {
+                if ('alternate' == e.feed.entry[t].link[r].rel) {
+                  var link = e.feed.entry[t].link[r].href;
+                  if (entryLabels.indexOf('Chapter') === -1) {
+                    hasNonChapterLinkEntry = true;
+                  }
+                  break;
+                }
+              }
+              var title = e.feed.entry[t].title.$t;
+              var publishedDate = e.feed.entry[t].published.$t;
+              var timeAgoText = timeAgo(publishedDate);
+              linkElement.href = link;
+              linkElement.textContent = title;
+              dateElement.textContent = ' ' + timeAgoText;
+              listItem.appendChild(linkElement);
+              listItem.appendChild(dateElement); // Append the new dateElement
+              listContainer.appendChild(listItem);
+              numChapters++;
+              encounteredEntryIDs[entryID] = true;
+              if (hasNonChapterLinkEntry) {
+                hasNonChapterLink = true;
+              }
+            }
+                }
+                if (numChapters === 0) {
+                  chapNumElement.textContent = 'No Chapter Yet';
+                  clOpenModal.style.display = 'none';
+                } else {
+                  if (hasNonChapterLink) {
+                    numChapters--; 
+                  }
+                  chapNumElement.textContent = numChapters;
+                }
+              }
+            }
+            // chaplist Modal 
+            var clModal = document.getElementById('clOpen'); var clBtn = document.getElementById('clBtn'); var clClose = document.getElementById('clClose'); clBtn.onclick = function() { openChaplistModal(); }; clClose.onclick = function() { closeChaplistModal(); }; function openChaplistModal() { clModal.style.display = 'block'; setTimeout(function() { clModal.style.opacity = '1'; }, 10); } function closeChaplistModal() { clModal.style.opacity = '0'; setTimeout(function() { clModal.style.display = 'none'; }, 300); }
+             //]]>
+          </script>
+          <div class='auto-listchap'>
+            <script defer expr:src='&quot;/feeds/posts/default/-/&quot; + data:label.name + &quot;?orderby=published&amp;max-results=99999&amp;alt=json-in-script&amp;callback=autolist&quot;' type='text/javascript'/>
+          </div>
+        </b:loop>
+      </div>
+    </div>
+    </div>
+  </b:if>
+</b:includable>
