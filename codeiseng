@@ -1,0 +1,20 @@
+<!-- Menampilkan total komentar di elemen ini -->
+<span id="totalCommentsContainer"></span>
+<script>
+  function total_comment(data) {
+    try {
+      // Mendapatkan total komentar dari data feed
+      var totalComments = data.feed.openSearch$totalResults.$t;
+      // Menampilkan total komentar di elemen dengan ID "totalCommentsContainer"
+      var totalCommentsContainer = document.getElementById('totalCommentsContainer');
+      if (totalCommentsContainer) {
+        totalCommentsContainer.textContent = 'Total Comments: ' + totalComments;
+      } else {
+        console.error('Element with ID "totalCommentsContainer" not found.');
+      }
+    } catch (error) {
+      console.error('Error processing JSON feed:', error);
+    }
+  }
+</script>
+<script expr:src='&quot;https://www.blogger.com/feeds/&quot; + data:blog.blogId + &quot;/comments/default?orderby=published&amp;alt=json-in-script&amp;callback=total_comment&quot;'></script>
