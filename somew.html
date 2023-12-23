@@ -24,6 +24,7 @@
     </b:loop>
   </b:if>
 </b:includable>
+          
 <b:includable id='select_chapter'>
   <b:if cond='data:posts any (p =&gt; p.labels any (l =&gt; l.name in [&quot;Novel&quot;,&quot;Anime&quot;,&quot;Manga&quot;]))'>
     <style>
@@ -133,20 +134,45 @@
     </div>
   </b:if>
 </b:includable>
+
 <b:includable id='postrelated'>
-  <!-- Related Post Widget Start -->
-    <b:if cond='data:blog.pageType == &quot;item&quot;'>
-      <b:if cond='not(data:posts any (p =&gt; p.labels any (l =&gt; l.name in [&quot;Chapter&quot;,&quot;Episode&quot;])))'>
-        <div class='related-post mt-2 mb-2' id='related-post'/>
-      <script type='text/javascript'>
-        var labelArray = [<b:if cond='data:post.labels'><b:loop values='data:post.labels' var='label'>&quot;<data:label.name/>&quot;<b:if cond='data:label.isLast != &quot;true&quot;'>,</b:if> </b:loop></b:if>]; var relatedPostConfig = { homePage: &quot;/&quot;, widgetTitle: &quot;&quot;, numPosts: 4, summaryLength: 70, titleLength: &quot;auto&quot;, thumbnailSize: 240, noImage: &quot;//3.bp.blogspot.com/-aR5w9KXuWGU/XhSDNRAVuhI/AAAAAAAAHG8/dLxcaZxSgh0v85JG0mWRMQyEwqMgpL1_gCLcBGAsYHQ/s320-rw/no-image.jpg&quot;, containerId: &quot;related-post&quot;, newTabLink: true, moreText: &quot;&quot;, widgetStyle: 2, callBack: function() {} };
-      </script>
-      <script type='text/javascript'>
-        //<![CDATA[
-          var randomRelatedIndex,showRelatedPost;!function(e,t,a){var l={widgetTitle:"<span>Related Posts:</span>",widgetStyle:1,homePage:"/",numPosts:7,summaryLength:370,titleLength:"auto",thumbnailSize:240,noImage:"//3.bp.blogspot.com/-aR5w9KXuWGU/XhSDNRAVuhI/AAAAAAAAHG8/dLxcaZxSgh0v85JG0mWRMQyEwqMgpL1_gCLcBGAsYHQ/s320-rw/no-image.jpg",containerId:"related-post",newTabLink:!1,excludeLabels:["Chapter","Episode"],callBack:function(){}};for(var s in relatedPostConfig)l[s]="undefined"==relatedPostConfig[s]?l[s]:relatedPostConfig[s];var n=function(e){var l=t.createElement("script");l.type="text/javascript",l.src=e,a.appendChild(l)},r=function(e){var t,a,l=e.length;if(0===l)return!1;for(;--l;)t=Math.floor(Math.random()*(l+1)),a=e[l],e[l]=e[t],e[t]=a;return e},i="object"==typeof labelArray&&labelArray.length>0?"/-/"+r(labelArray)[0]:"";randomRelatedIndex=function(e){var t=e.feed.openSearch$totalResults.$t-l.numPosts,a=function(e,t){return Math.floor(Math.random()*(t-1+1))+1}(0,t>0?t:1);n(l.homePage.replace(/\/$/,"")+"/feeds/posts/summary"+i+"?alt=json-in-script&orderby=updated&start-index="+a+"&max-results="+l.numPosts+"&callback=showRelatedPost")},showRelatedPost=function(e){var t,a,s,n,i,o=document.getElementById(l.containerId),d=r(e.feed.entry),m=l.widgetStyle,c=l.widgetTitle+'<div class="subtitle mb-1"><span>Related Post</span></div><div class="cont">',h=l.newTabLink?' target="_blank"':"";if(o){for(var u=0;u<l.numPosts&&u!=d.length;u++){var g=!1;for(var p of l.excludeLabels)if(d[u].category.some(e=>e.term===p)){g=!0;break}if(!g){for(var f=d[u].thr$total&&d[u].thr$total.$t||"0",b=d[u].category,v='<div class="post-labels fs-08">',w=0;w<b.length;w++)v+='<span class="post-label">'+b[w].term+"</span>";v+="</div>",a=d[u].title.$t,s="auto"!==l.titleLength&&l.titleLength<a.length?a.substring(0,l.titleLength)+"…":a,n="media$thumbnail"in d[u]&&!1!==l.thumbnailSize?d[u].media$thumbnail.url.replace(/\/s\d+(-c)?(-rw-w\d+-h\d+(-c)?)?/,"/s"+l.thumbnailSize+"-rw"):l.noImage,i="summary"in d[u]&&l.summaryLength>0?d[u].summary.$t.replace(/<br ?\/?>/g," ").replace(/<.*?>/g,"").replace(/[<>]/g,"").substring(0,l.summaryLength)+"…":"";for(var y=0,x=d[u].link.length;y<x;y++)t="alternate"==d[u].link[y].rel?d[u].link[y].href:"#";2==m&&(c+='<div class="items list"><a title="'+a+'" href="'+t+'"><img alt="'+a+'" class="rel-thumb" src="'+n+'" width="'+l.thumbnailSize+'" height="'+l.thumbnailSize+'"/>'+("0"!==f?'<span class="comment-info yzg"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M17 3.338A9.954 9.954 0 0 0 12 2C6.477 2 2 6.477 2 12c0 1.6.376 3.112 1.043 4.453c.178.356.237.763.134 1.148l-.595 2.226a1.3 1.3 0 0 0 1.591 1.591l2.226-.595a1.634 1.634 0 0 1 1.149.133A9.958 9.958 0 0 0 12 22c5.523 0 10-4.477 10-10c0-1.821-.487-3.53-1.338-5"/></svg>'+f+"</span>":"")+'</a><div class="info flex column"><a class="post-title fw-700 max-line-2" title="'+a+'" href="'+t+'"'+h+">"+s+'</a><span class="post-summary max-line-1"><span class="related-post-item-summary-text max-line-1">'+i+"</span> "+v+'<a href="'+t+'" aria-label="'+a+'" class="related-post-item-more"'+h+"></a></span></div></div>")}}o.innerHTML=c+="</div>",l.callBack()}},n(l.homePage.replace(/\/$/,"")+"/feeds/posts/summary"+i+"?alt=json-in-script&orderby=updated&max-results=0&callback=randomRelatedIndex")}(window,document,document.getElementsByTagName("head")[0]);
-        //]]>
-      </script>
-    </b:if>
-    </b:if>
-  <!-- Related Post Widget End -->
+<!-- Related Post Widget Start -->
+  <b:if cond='data:blog.pageType == &quot;item&quot;'>
+    <div class='related-post mt-2' id='related-post'/>
+    <script type='text/javascript'>
+      var labelArray = [<b:if cond='data:post.labels'><b:loop values='data:post.labels' var='label'>&quot;<data:label.name/>&quot;<b:if cond='data:label.isLast != &quot;true&quot;'>,</b:if>
+      </b:loop></b:if>];
+      var relatedPostConfig = {
+        homePage: &quot;/&quot;,
+        widgetTitle: &quot;&quot;,
+        numPosts: 4,
+        summaryLength: 70,
+        titleLength: &quot;auto&quot;,
+        thumbnailSize: 240,
+        noImage: &quot;//3.bp.blogspot.com/-aR5w9KXuWGU/XhSDNRAVuhI/AAAAAAAAHG8/dLxcaZxSgh0v85JG0mWRMQyEwqMgpL1_gCLcBGAsYHQ/s320-rw/no-image.jpg&quot;,
+        containerId: &quot;related-post&quot;,
+        newTabLink: true,
+        moreText: &quot;&quot;,
+        widgetStyle: 2,
+        callBack: function() {}
+      };
+    </script>
+    <script type='text/javascript'>
+      //<![CDATA[
+      var randomRelatedIndex, showRelatedPost; (function (n, m, k) { var d = { widgetTitle: "<span>Related Posts:</span>", widgetStyle: 1, homePage: "/", numPosts: 7, summaryLength: 370, titleLength: "auto", thumbnailSize: 240, noImage: "//3.bp.blogspot.com/-aR5w9KXuWGU/XhSDNRAVuhI/AAAAAAAAHG8/dLxcaZxSgh0v85JG0mWRMQyEwqMgpL1_gCLcBGAsYHQ/s320-rw/no-image.jpg", containerId: "related-post", newTabLink: false, callBack: function () {} }; for (var f in relatedPostConfig) { d[f] = (relatedPostConfig[f] == "undefined") ? d[f] : relatedPostConfig[f] } var j = function (a) { var b = m.createElement("script"); b.type = "text/javascript"; b.src = a; k.appendChild(b) }, o = function (b, a) { return Math.floor(Math.random() * (a - b + 1)) + b }, l = function (a) { var p = a.length, c, b; if (p === 0) { return false } while (--p) { c = Math.floor(Math.random() * (p + 1)); b = a[p]; a[p] = a[c]; a[c] = b } return a }, e = (typeof labelArray == "object" && labelArray.length > 0) ? "/-/" + l(labelArray)[0] : "", h = function (b) { var c = b.feed.openSearch$totalResults.$t - d.numPosts, a = o(1, (c > 0 ? c : 1)); j(d.homePage.replace(/\/$/, "") + "/feeds/posts/summary" + e + "?alt=json-in-script&orderby=updated&start-index=" + a + "&max-results=" + d.numPosts + "&callback=showRelatedPost") }, g = function (z) { var s = document.getElementById(d.containerId), x = l(z.feed.entry), A = d.widgetStyle, c = d.widgetTitle + '<div class="subtitle mb-1"><span>Related Post</span></div><div class="cont">', b = d.newTabLink ? ' target=""' : "", y = '<span style="display:block;clear:both;"></span>', v, t, w, r, u, commentsCount; if (!s) { return } for (var q = 0; q < d.numPosts; q++) { if (q == x.length) { break; } var labels = x[q].category; var hasChapterLabel = false; for (var labelIndex = 0; labelIndex < labels.length; labelIndex++) { if (labels[labelIndex].term.toLowerCase() === 'chapter') { hasChapterLabel = true; break; } } if (hasChapterLabel) { continue; } var commentsCount = x[q].thr$total ? x[q].thr$total.$t || '0' : '0'; var labels = x[q].category; var labelHTML = '<div class="post-labels fs-08">'; for (var labelIndex = 0; labelIndex < labels.length; labelIndex++) { labelHTML += '<span class="post-label">' + labels[labelIndex].term + '</span>'; } labelHTML += '</div>'; t = x[q].title.$t; w = (d.titleLength !== "auto" && d.titleLength < t.length) ? t.substring(0, d.titleLength) + "…" : t; r = ("media$thumbnail" in x[q] && d.thumbnailSize !== false) ? x[q].media$thumbnail.url.replace(/\/s[0-9]+(\-c)?/, "/s" + d.thumbnailSize + "-rw") : d.noImage; u = ("summary" in x[q] && d.summaryLength > 0) ? x[q].summary.$t.replace(/<br ?\/?>/g, " ").replace(/<.*?>/g, "").replace(/[<>]/g, "").substring(0, d.summaryLength) + "…" : ""; for (var p = 0, a = x[q].link.length; p < a; p++) { v = (x[q].link[p].rel == "alternate") ? x[q].link[p].href : "#" } if (A == 2) { c += '<div class="items list">' + '<div class="post-img full relative">' + '<a title="' + t + '" href="' + v + '">' + '<img alt="' + t + '" class="img-thumb" src="' + r + '" width="' + d.thumbnailSize + '" height="' + d.thumbnailSize + '"/>' + '</a>' + '</div>' + '<div class="info flex g-1">' + '<div class="titlendesc"><a class="post-title fw-700 max-line-2" title="' + t + '" href="' + v + '"' + b + ">" + w + '</a>' + '<span class="post-summary max-line-1 related-post-item-summary-text max-line-1">' + u + '</span></div>' + '<div class="meta flex g-05 fs-08">' + labelHTML + (commentsCount !== '0' ? '<span class="comment-info fs-08 yzg"><svg height="14" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12c0 1.821.487 3.53 1.338 5L2.5 21.5l4.5-.838A9.955 9.955 0 0 0 12 22Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>' + commentsCount + '</span>' : '') + '</div>' + '</div></div>'; } } s.innerHTML = c += "</div>" + y; d.callBack() }; randomRelatedIndex = h; showRelatedPost = g; j(d.homePage.replace(/\/$/, "") + "/feeds/posts/summary" + e + "?alt=json-in-script&orderby=updated&max-results=0&callback=randomRelatedIndex") })(window, document, document.getElementsByTagName("head")[0]);
+      //]]>
+    </script>
+  </b:if>
+<!-- Related Post Widget End -->
 </b:includable>
+
+<b:includable id='yzg-date'>
+  <b:loop values='data:widgets.Blog.first.allBylineItems where (i => i.name == "timestamp")' var='byline'>
+    <span class='mie-03' id='timeAgoContainer'></span>
+    <script>
+      // Function to convert full date to time ago format
+      function timeAgo(dateString) { const currentDate = new Date(); const publishDate = new Date(dateString); const timeDifference = currentDate - publishDate; const seconds = Math.floor(timeDifference / 1000); let interval = Math.floor(seconds / 31536000); if (interval >= 1) { return interval === 1 ? interval + ' year ago' : interval + ' years ago'; } interval = Math.floor(seconds / 2592000); if (interval >= 1) { return interval === 1 ? interval + ' month ago' : interval + ' months ago'; } interval = Math.floor(seconds / 86400); if (interval >= 1) { return interval === 1 ? interval + ' day ago' : interval + ' days ago'; } interval = Math.floor(seconds / 3600); if (interval >= 1) { return interval === 1 ? interval + ' hour ago' : interval + ' hours ago'; } interval = Math.floor(seconds / 60); if (interval >= 1) { return interval === 1 ? interval + ' minute ago' : interval + ' minutes ago'; } return interval === 1 ? interval + ' second ago' : interval + ' seconds ago'; } var postDateISO8601 = '<data:post.date.iso8601/>'; var timeAgoContainer = document.getElementById('timeAgoContainer'); if (timeAgoContainer) { timeAgoContainer.textContent = timeAgo(postDateISO8601); }
+    </script>
+  </b:loop>            
+</b:includable>
+
