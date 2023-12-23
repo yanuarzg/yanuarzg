@@ -18,3 +18,23 @@
   }
 </script>
 <script expr:src='&quot;https://www.blogger.com/feeds/&quot; + data:blog.blogId + &quot;/comments/default?orderby=published&amp;alt=json-in-script&amp;callback=total_comment&quot;'></script>
+
+<!-- Menampilkan total post di elemen ini -->
+<div class="yzTotalPosts fnum label-count"><span></span></div>
+<script>
+  function total_post(data) { 
+    try { 
+      var totalPosts = data.feed.openSearch$totalResults.$t; 
+      var totalPostsContainers = document.querySelectorAll('.yzTotalPosts'); 
+      if (totalPostsContainers.length > 0) { 
+        totalPostsContainers.forEach(function(container) { 
+          container.textContent = '' + totalPosts; 
+        });  
+      } else { 
+      console.error('Elements with class "yzTotalPosts" not found.'); 
+      } 
+    } catch (error) { 
+      console.error('Error processing JSON feed:', error); 
+    } 
+  } 
+</script>
