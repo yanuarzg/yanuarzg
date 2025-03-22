@@ -22,6 +22,6 @@ Feel free to reach out if you’re interested in collaboration, open-source proj
 
 🔗 **Links:**  
 - 🌐 Blog:  [yztheme.my.id](https://yztheme.my.id) | [catatandroid.com](https://catatandroid.com) | [ulasandroid.com](https://ulasandroid.com)  
-- 📩 Email: [zhalxdev@gmail.com] *(optional)*  
+- 📩 Email: [zhalxdev@gmail.com]
 
 Thanks for stopping by! 👋  
