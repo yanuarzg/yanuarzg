@@ -10,10 +10,11 @@ I’m a **tech enthusiast**, **blogger**, and **front-end developer** with a pas
 - 🎨 **CSS**: Creating visually appealing designs and layouts.  
 - ⚡ **JavaScript**: Adding interactivity and dynamic functionality to websites.  
 
-Currently, I own and write for three blogs where I share my knowledge and insights:  
+Currently, I own and write for some blogs where I share my knowledge and insights:  
 - 📱 **[catatandroid.com](https://catatandroid.com)** – Your go-to source for Android tips, tricks, and in-depth guides.  
 - 🌟 **[ulasandroid.com](https://ulasandroid.com)** – Honest reviews and insights about the latest Android apps, tools, and gadgets.  
-- 🎨 **[yztheme.my.id](https://yztheme.my.id)** – A creative hub for themes, customization ideas, and design inspiration.  
+- 🎨 **[yztheme.my.id](https://yztheme.my.id)** – A creative hub for themes, customization ideas, and design inspiration.
+- 🚌 **[terminalbuspariwisata.id](https://terminalbuspariwisata.id/)** - one of my clients who is engaged in bus rental services.
 
 When I’m not writing or coding, you’ll probably find me exploring new tech, tweaking my setups, or brainstorming my next big project.  
 
