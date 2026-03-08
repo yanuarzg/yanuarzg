@@ -297,6 +297,9 @@ ul#menu-top-menu ul.sub-menu .menu-item {
 .page .jl_smmain_con {
     flex-direction: column;
 }
+.jlc-col-md-8.jl_main_achv {
+    margin-bottom: 2rem;
+}
 .jl_smmain_side {
     padding-bottom: 2.5rem!important;
 }
