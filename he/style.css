@@ -264,7 +264,7 @@ ul#menu-top-menu ul.sub-menu .menu-item {
 	margin: 0!important;
 	border: 0;
 }
-.recent-blg-multi.grid ul li img, .recent-blg-multi.grid ul li .post-img, .recent-wp-multi.grid ul li img, .recent-wp-multi.grid ul li .post-img, .recent-blg .post-img, .recent-wp .post-img, .recent-blg .post-img img, .recent-wp .post-img img {
+.recent-blg-multi.grid ul li img, .recent-blg-multi.grid ul li .post-img, .recent-wp-multi.grid ul li img, .recent-wp-multi.grid ul li .post-img, .recent-blg .post-img, .recent-wp .post-img, .recent-blg .post-img img, .recent-wp .post-img img, .recent-wp-multi ul li img, .recent-wp-multi ul li .post-img {
 	aspect-ratio: 16/9;
 	max-width: 220px;
 	height: auto!important;
