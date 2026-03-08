@@ -9,6 +9,17 @@
  * - Skeleton loader responsif (4 desktop, 2 mobile)
  */
 
+(() => {
+  'use strict';
+  const TARGET_URL = 'https://harianexpress.com';
+  const links = document.querySelectorAll('.logo_link');
+  Array.from(links).forEach(link => {
+    if (link.getAttribute('href') !== TARGET_URL) {
+      link.href = TARGET_URL;
+    }
+  });
+})();
+
 document.addEventListener("DOMContentLoaded", function () {
 
   // ============================================================
