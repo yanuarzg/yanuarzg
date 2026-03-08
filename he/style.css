@@ -268,7 +268,7 @@ ul#menu-top-menu ul.sub-menu .menu-item {
 	aspect-ratio: 16/9;
 	max-width: 220px;
 	height: auto!important;
-	width: -webkit-fill-available!important;
+	width: -webkit-fill-available!important; border-radius: 0.5rem!important;
 }
 .recent-blg-multi.grid ul li a,.recent-wp-multi.grid ul li a {
 	overflow: hidden;
