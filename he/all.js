@@ -25,8 +25,18 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   // CONFIG
   // ============================================================
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 menit
-  const LAZY_LOAD_THRESHOLD = '200px';  // mulai load saat 200px dari viewport
+  const config = {
+    CACHE_DURATION: 5 * 60 * 1000, // 5 menit
+    LAZY_LOAD_THRESHOLD: '200px',  // mulai load saat 200px dari viewport
+    ERROR_MESSAGE: '<p>Gagal memuat konten. Silakan coba lagi nanti.</p>'
+  };
+
+  // ============================================================
+  // HELPER: Escape HTML
+  // ============================================================
+  function escapeHTML(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
 
   // ============================================================
   // SKELETON LOADER HTML
@@ -42,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
       </li>
     `;
 
-    // Desktop: 4, Mobile: 2
+    // Desktop: 4, Mobile: 2 (bisa diadjust dengan media query jika perlu)
     const count = window.innerWidth >= 768 ? 4 : 2;
     const items = Array(count).fill(skeletonHTML).join('');
 
@@ -65,24 +75,25 @@ document.addEventListener("DOMContentLoaded", function () {
     return '<ul style="list-style:none;padding:0;margin:0;">' +
       items.map(item => `
         <li style="display:flex;gap:12px;margin-bottom:15px;align-items:center;">
-          <a href="${item.link}" aria-label="${item.title}" class="post-img">
+          <a href="${escapeHTML(item.link)}" aria-label="${escapeHTML(item.title)}" class="post-img">
             <img src="${item.img}"
+               alt="${escapeHTML(item.title)}"
                style="width:70px;height:50px;object-fit:cover;border-radius:4px;"
                onerror="this.src='https://placehold.co/70x50'"/>
           </a>
           <div style="flex:1;">
-          <h2 class="h3 jl_fe_title jl_txt_2row" style="text-decoration:none;font-size:18px;display:block;line-height:1.5;">
-            <a href="${item.link}" target="_blank">
-              ${item.title}
-            </a>
-            </h2>
+            <h3 class="jl_fe_title jl_txt_2row" style="text-decoration:none;font-size:18px;display:block;line-height:1.5;">
+              <a href="${escapeHTML(item.link)}" target="_blank">
+                ${escapeHTML(item.title)}
+              </a>
+            </h3>
             <small style="font-size:11px;">
-              ${item.date}
+              <time datetime="${item.rawDate}">${item.date}</time>
             </small>
           </div>
         </li>`).join('') +
       '</ul>';
-    }
+  }
 
   // ============================================================
   // CACHE HELPER
@@ -92,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const item = localStorage.getItem(key);
       if (!item) return null;
       const data = JSON.parse(item);
-      if (Date.now() - data.timestamp > CACHE_DURATION) {
+      if (Date.now() - data.timestamp > config.CACHE_DURATION) {
         localStorage.removeItem(key);
         return null;
       }
@@ -109,7 +120,9 @@ document.addEventListener("DOMContentLoaded", function () {
         timestamp: Date.now()
       }));
     } catch (e) {
-      // localStorage penuh atau disabled
+      if (e.name === 'QuotaExceededError') {
+        localStorage.clear(); // atau hapus selective jika perlu
+      }
     }
   }
 
@@ -125,6 +138,12 @@ document.addEventListener("DOMContentLoaded", function () {
         link.href = `https://${domain}`;
         link.crossOrigin = 'anonymous';
         head.appendChild(link);
+
+        // Fallback dns-prefetch
+        const dnsLink = document.createElement('link');
+        dnsLink.rel = 'dns-prefetch';
+        dnsLink.href = `https://${domain}`;
+        head.appendChild(dnsLink);
       }
     });
   }
@@ -138,8 +157,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const container = entry.target;
         const loader = container.dataset.loader;
         
-        // Tampilkan skeleton
+        // Tampilkan skeleton dan set aria-busy
         container.innerHTML = renderSkeleton();
+        container.setAttribute('aria-busy', 'true');
         
         if (loader && window[loader]) {
           window[loader](container);
@@ -149,17 +169,17 @@ document.addEventListener("DOMContentLoaded", function () {
         lazyLoadObserver.unobserve(container);
       }
     });
-  }, { rootMargin: LAZY_LOAD_THRESHOLD });
+  }, { rootMargin: config.LAZY_LOAD_THRESHOLD });
 
   // ============================================================
   // WORDPRESS OPTIMIZED FETCH
   // ============================================================
-  async function fetchWPOptimized(source, catId, count) {
+  async function fetchWPOptimized(source, catId, count, container) {
     const cacheKey = `wp_${source}_${catId || 'all'}_${count}`;
     const cached = getCached(cacheKey);
     if (cached) return cached;
 
-    let url = `https://${source}/wp-json/wp/v2/posts?per_page=${count}&_fields=id,title,link,date,featured_media`;
+    let url = `https://${source}/wp-json/wp/v2/posts?per_page=${count}&_fields=id,title,link,date,featured_media&orderby=date&order=desc`;
     if (catId) url += `&categories=${catId}`;
 
     const controller = new AbortController();
@@ -207,7 +227,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     } catch (err) {
       clearTimeout(timeout);
-      console.warn(`WP fetch failed for ${source}:`, err.message);
+      console.error(`WP fetch failed for ${source}:`, err.message);
+      if (container) container.innerHTML = config.ERROR_MESSAGE;
       return [];
     }
   }
@@ -239,7 +260,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   // BLOGGER OPTIMIZED (sudah cepat, tambah cache)
   // ============================================================
-  function loadBloggerOptimized(source, category, count, callback) {
+  function loadBloggerOptimized(source, category, count, callback, container) {
     const cacheKey = `blg_${source}_${category || 'all'}_${count}`;
     const cached = getCached(cacheKey);
     
@@ -279,6 +300,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const scriptEl = document.getElementById(cbName);
       if (scriptEl) scriptEl.remove();
       delete window[cbName];
+      if (container) container.innerHTML = config.ERROR_MESSAGE;
       callback([]);
     };
     document.body.appendChild(script);
@@ -291,8 +313,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const source = container.getAttribute('data-source');
     const count = parseInt(container.getAttribute('data-items')) || 5;
 
-    const posts = await fetchWPOptimized(source, null, count);
+    const posts = await fetchWPOptimized(source, null, count, container);
     container.innerHTML = renderList(posts);
+    container.removeAttribute('aria-busy');
   };
 
   document.querySelectorAll('.recent-wp').forEach(container => {
@@ -309,7 +332,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     loadBloggerOptimized(source, null, count, posts => {
       container.innerHTML = renderList(posts);
-    });
+      container.removeAttribute('aria-busy');
+    }, container);
   };
 
   document.querySelectorAll('.recent-blg').forEach(container => {
@@ -340,7 +364,7 @@ document.addEventListener("DOMContentLoaded", function () {
         catId = await fetchWPCategory(source, category);
         if (!catId) return [];
       }
-      return fetchWPOptimized(source, catId, total);
+      return fetchWPOptimized(source, catId, total, container);
     });
 
     const results = await Promise.allSettled(promises);
@@ -354,7 +378,9 @@ document.addEventListener("DOMContentLoaded", function () {
       allPosts.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
     }
 
-    container.innerHTML = renderList(allPosts.slice(0, total));
+    const slicedPosts = allPosts.slice(0, total);
+    container.innerHTML = slicedPosts.length ? renderList(slicedPosts) : config.ERROR_MESSAGE;
+    container.removeAttribute('aria-busy');
   };
 
   document.querySelectorAll('.recent-wp-multi').forEach(container => {
@@ -389,9 +415,11 @@ document.addEventListener("DOMContentLoaded", function () {
           if (sort === 'date') {
             allEntries.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
           }
-          container.innerHTML = renderList(allEntries.slice(0, total));
+          const slicedEntries = allEntries.slice(0, total);
+          container.innerHTML = slicedEntries.length ? renderList(slicedEntries) : config.ERROR_MESSAGE;
+          container.removeAttribute('aria-busy');
         }
-      });
+      }, container);
     });
   };
 
@@ -405,12 +433,16 @@ document.addEventListener("DOMContentLoaded", function () {
 /* Scroll Control (Passive for Performance) */
 (function() {
   let lastS = 0;
+  let timeout;
   window.addEventListener('scroll', () => {
-    let currS = window.pageYOffset;
-    if (Math.abs(currS - lastS) < 50) return;
-    document.body.classList.toggle('dw', currS > lastS && currS > 100);
-    document.body.classList.toggle('up', currS < lastS);
-    lastS = currS;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      let currS = window.pageYOffset;
+      if (Math.abs(currS - lastS) < 50) return;
+      document.body.classList.toggle('dw', currS > lastS && currS > 100);
+      document.body.classList.toggle('up', currS < lastS);
+      lastS = currS;
+    }, 100);
   }, { passive: true });
 })();
 
