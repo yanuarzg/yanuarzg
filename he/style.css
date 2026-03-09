@@ -77,8 +77,6 @@ body, body * {
 h2.h3.jl_fe_title {
 	font-weight: bold;
 }
-.headline h2, .headline h3 { font-size: 0.95rem!important;
-    line-height: 1.45!important; }
 
 .jlcus_sec_title.jl_sec_style11 .jlcus_sect_inner {
 	padding-inline-start: 0.5rem;
@@ -251,6 +249,17 @@ ul#menu-top-menu ul.sub-menu .menu-item {
 .recent-wp-multi h2, .recent-wp h2, .recent-wp-multi h3, .recent-wp h3, .jl_relsec_wrap h2, .jl_relsec_wrap h3, .jl_fe_title {
     line-height: 1.45!important;
     font-weight: 500!important;
+}
+.headline h2, .headline h3 { 
+	font-size: 0.95rem!important;
+    line-height: 1.45!important; 
+}
+.headline h2 a, .headline h3 a {
+    overflow: hidden!important;
+    text-overflow: ellipsis!important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical!important;
+	-webkit-line-clamp: 2!important;
 }
 
 .recent-blg-multi.grid ul,.recent-wp-multi.grid ul,.recent-blg.grid ul,.recent-wp.grid ul {
