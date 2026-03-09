@@ -584,4 +584,4 @@ a.logo_link img, .jlh-d .logo_small_wrapper_table .logo_small_wrapper .logo_link
 	max-width: unset!important;
 }
 
-.jlc-stick-main-w.jlc-hop4.jl_cus_sihead.jl_r_menu, .dn-i, .d-none-i, .none-i, .jl_shwp, .jl_relsec_wrap span.jl_f_cat.jl_lb1, .jl_relsec_wrap .jl_fe_des, .jl_relsec_wrap .jl_post_meta, .jl_smmain_side .jl_f_cat, .jl_smmain_side .jl_post_meta { display: none!important; } 
+.jlc-stick-main-w.jlc-hop4.jl_cus_sihead.jl_r_menu, .dn-i, .d-none-i, .none-i, .jl_shwp, .jl_relsec_wrap span.jl_f_cat.jl_lb1, .jl_relsec_wrap .jl_fe_des, .jl_relsec_wrap .jl_post_meta, .jl_smmain_side .jl_f_cat, .jl_smmain_side .jl_post_meta, .archive .jl_f_cat, .archive .jl_post_meta { display: none!important; } 
