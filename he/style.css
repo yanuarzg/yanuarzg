@@ -61,6 +61,9 @@ blockquote:after, .note:after, .success:after, .warning:after, .danger:after { c
     padding-bottom: 0!important;
     margin: 0!important;
 }
+.error404 .jl_block_content {
+    padding-bottom: 3rem!important;
+}
 
 .jl_home_bw, .jlc-container, footer#jl-footer-custpl > div > div {
 	padding-inline: var(--edge);
