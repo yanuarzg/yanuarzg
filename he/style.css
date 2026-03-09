@@ -77,7 +77,9 @@ body, body * {
 h2.h3.jl_fe_title {
 	font-weight: bold;
 }
-.headline h2 {font-size:16px!important;}
+.headline h2, .headline h3 { font-size: 0.95rem!important;
+    line-height: 1.45!important; }
+
 .jlcus_sec_title.jl_sec_style11 .jlcus_sect_inner {
 	padding-inline-start: 0.5rem;
 }
@@ -244,6 +246,11 @@ ul#menu-top-menu ul.sub-menu .menu-item {
 
 .recent-blg-multi,.recent-wp-multi,.recent-blg,.recent-wp {
 	min-height: 12rem;
+}
+
+.recent-wp-multi h2, .recent-wp h2, .recent-wp-multi h3, .recent-wp h3 {
+    line-height: 1.45!important;
+    font-weight: 500!important;
 }
 
 .recent-blg-multi.grid ul,.recent-wp-multi.grid ul,.recent-blg.grid ul,.recent-wp.grid ul {
