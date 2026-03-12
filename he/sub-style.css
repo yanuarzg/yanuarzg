@@ -40,6 +40,15 @@
 
 /* tablet */
 @media only screen and (max-width:770px) {
+    footer .e-con-inner {
+        flex-wrap: wrap!important;
+        gap: 2rem!important;
+    }
+    footer .elementor-element-4e58d07c {
+        align-items: center;
+    }
+    footer .elementor-element-4e58d07c, footer .elementor-element-51270988 {
+    }    
 }
 
 
