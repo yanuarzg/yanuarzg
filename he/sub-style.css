@@ -24,31 +24,12 @@
     h2.h3.jl_fe_title {
     font-size: 1.75rem!important;
     }
-    footer .e-con-inner {
-    display: flex!important;
-    flex-wrap: nowrap!important;
-    }
-    footer .elementor-element-4e58d07c, footer .elementor-element-51270988 {
-    max-width: 25%;
-    padding-inline-end: 0;
-    place-self: start;
-    place-items: start;
-    margin-block: 0;
-    }
 }
 
 
 /* tablet */
 @media only screen and (max-width:770px) {
-    footer .e-con-inner {
-        flex-wrap: wrap!important;
-        gap: 2rem!important;
-    }
-    footer .elementor-element-4e58d07c {
-        align-items: center;
-    }
-    footer .elementor-element-4e58d07c, footer .elementor-element-51270988 {
-    }    
+
 }
 
 
