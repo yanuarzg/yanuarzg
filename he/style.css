@@ -507,6 +507,10 @@ iframe {
 	.menu-detached  .jl_sidebar_w { top: 3rem!important; }
 	/* side share */
 	.post_content_w .post_sw { padding-inline: 1rem; }
+	.jl_smmain_con, .jl_smmain_side, .jl_main_achv {
+	    -ms-flex: auto;
+	    flex: auto;
+	}
 }
 
 
