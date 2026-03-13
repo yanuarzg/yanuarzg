@@ -10,19 +10,16 @@
     }
   },
   "slider": {
-    "enabled": true,
+    "enabled": false,
     "type": "wordpress",
     "subdomain": "tangsel.harianexpress.com",
     "filterType": "category",
-    "filterValue": "Headline",
+    "filterValue": "Berita",
     "count": 5,
     "autoplaySpeed": 5000
   },
   "display": {
-    "heightDesktop": "400px",
-    "heightMobile": "250px",
-    "borderRadius": "12px",
     "showOnSites": []
   },
-  "version": 1773395007648
+  "version": 1773410118575
 }
