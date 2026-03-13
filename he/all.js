@@ -446,7 +446,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   // CONFIGURATION
   // ============================================================
-  const CONFIG_URL = 'https://cdn.yoursite.com/banner-config.json'; // GANTI URL INI
+  const CONFIG_URL = 'https://yanuarzg.github.io/cc/he/banner-config.json';
   const CACHE_DURATION = 5 * 60 * 1000; // 5 menit cache
   const BANNER_NAMESPACE = 'centralizedBanner'; // Unique namespace
 
