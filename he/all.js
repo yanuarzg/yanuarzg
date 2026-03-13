@@ -10,7 +10,7 @@
   // ============================================================
   // CONFIGURATION
   // ============================================================
-  const CONFIG_URL = 'https://cdn.jsdelivr.net/gh/yanuarzg/cc@main/he/banner-config.json'; // GANTI URL INI
+  const CONFIG_URL = 'https://yanuarzg.github.io/cc/he/banner-config.json';
   const CACHE_DURATION = 5 * 60 * 1000; // 5 menit cache
 
   // ============================================================
