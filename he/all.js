@@ -431,6 +431,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
+
 /**
  * CENTRALIZED BANNER WIDGET
  * Pasang script ini di semua website (20+ sites)
@@ -484,14 +485,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // LOAD CONFIG
   // ============================================================
   async function loadBannerConfig() {
-    // HANYA proses container dengan ID spesifik 'banner-event'
     const container = document.getElementById('banner-event');
-    if (!container) {
-      // Tidak ada banner-event container, skip
-      return;
-    }
+    if (!container) return;
 
-    // Try cache first
     let config = getCachedConfig();
     
     if (!config) {
@@ -514,7 +510,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // RENDER BANNER
   // ============================================================
   function renderBanner(container, config) {
-    // Check if should display on this site
     const currentHost = window.location.hostname;
     if (config.display.showOnSites && config.display.showOnSites.length > 0) {
       const shouldShow = config.display.showOnSites.some(site => 
@@ -526,11 +521,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // Responsive height
-    const isMobile = window.innerWidth < 768;
-    const height = isMobile ? config.display.heightMobile : config.display.heightDesktop;
-
-    // Build banner HTML
     let html = `
       <div class="centralized-banner" style="
         width: -moz-available;
@@ -549,9 +539,7 @@ document.addEventListener("DOMContentLoaded", function () {
       ">
     `;
 
-    // Event banner overlay
     if (config.event.image) {
-      const position = getPositionStyles(config.event.position);
       html += `
         <img 
           src="${config.event.image}" 
@@ -560,32 +548,35 @@ document.addEventListener("DOMContentLoaded", function () {
       `;
     }
 
-    // Article slider container
     if (config.slider && config.slider.enabled && config.slider.subdomain) {
       html += `
-        <div id="banner-slider" style="
-          position: relative;">
-          <button onclick="window.bannerSlider.prev()" style="
-            position:absolute;left:6px;top:50%;transform:translateY(-50%);
-            background:rgba(255,255,255,0.15);border:none;color:white;
-            width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;
-          ">‹</button>
+        <div id="banner-slider" style="flex: 1; min-width: 0; padding: 8px 0;">
           <div id="slider-track" style="
-            display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow:hidden;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 4px 4px 8px 4px;
           "></div>
-          <button onclick="window.bannerSlider.next()" style="
-            position:absolute;right:6px;top:50%;transform:translateY(-50%);
-            background:rgba(255,255,255,0.15);border:none;color:white;
-            width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;
-          ">›</button>
         </div>
       `;
     }
 
     html += '</div>';
+
+    // Inject scrollbar-hide style once
+    if (!document.getElementById('banner-scroll-style')) {
+      const style = document.createElement('style');
+      style.id = 'banner-scroll-style';
+      style.textContent = '#slider-track::-webkit-scrollbar { display: none; }';
+      document.head.appendChild(style);
+    }
+
     container.innerHTML = html;
 
-    // Initialize slider if enabled
     if (config.slider && config.slider.enabled && config.slider.subdomain) {
       initSlider(config.slider);
     }
@@ -599,24 +590,14 @@ document.addEventListener("DOMContentLoaded", function () {
     let vertical = '';
 
     switch (position.horizontal) {
-      case 'left':
-        horizontal = 'left: 20px;';
-        break;
-      case 'right':
-        horizontal = 'right: 20px;';
-        break;
-      case 'center':
-        horizontal = 'left: 50%; transform: translateX(-50%);';
-        break;
+      case 'left':   horizontal = 'left: 20px;'; break;
+      case 'right':  horizontal = 'right: 20px;'; break;
+      case 'center': horizontal = 'left: 50%; transform: translateX(-50%);'; break;
     }
 
     switch (position.vertical) {
-      case 'top':
-        vertical = 'top: 20px;';
-        break;
-      case 'bottom':
-        vertical = 'bottom: 20px;';
-        break;
+      case 'top':    vertical = 'top: 20px;'; break;
+      case 'bottom': vertical = 'bottom: 20px;'; break;
       case 'center':
         vertical = 'top: 50%; transform: translateY(-50%);';
         if (position.horizontal === 'center') {
@@ -629,51 +610,37 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ============================================================
-  // SLIDER LOGIC
+  // SLIDER LOGIC — CSS scroll-snap, no JS navigation
   // ============================================================
   function initSlider(sliderConfig) {
-    // Validation
     if (!sliderConfig.subdomain || !sliderConfig.filterType || !sliderConfig.filterValue) {
       console.warn('Slider config incomplete - subdomain, filterType, and filterValue required');
       return;
     }
 
-    const articles = [];
-    let currentIndex = 0;
-    let autoplayTimer = null;
-
-    window.bannerSlider = {
-      next: () => {
-        if (articles.length === 0) return;
-        currentIndex = (currentIndex + 1) % articles.length;
-        renderSlide();
-        resetAutoplay();
-      },
-      prev: () => {
-        if (articles.length === 0) return;
-        currentIndex = (currentIndex - 1 + articles.length) % articles.length;
-        renderSlide();
-        resetAutoplay();
-      }
-    };
-
-    function renderSlide() {
+    function renderSlide(articles) {
       const track = document.getElementById('slider-track');
       if (!track || articles.length === 0) return;
-    
-      const visibleCount = 3;
+
       track.innerHTML = '';
-    
-      for (let i = 0; i < visibleCount; i++) {
-        const idx = (currentIndex + i) % articles.length;
-        const article = articles[idx];
+
+      articles.forEach(article => {
         const card = document.createElement('a');
         card.href = article.link;
         card.target = '_blank';
+        card.rel = 'noopener';
+        // Each card snaps individually, fixed width shows ~3 cards at once
         card.style.cssText = `
-          display:block; text-decoration:none; color:white;
-          background:rgba(255,255,255,0.1); border-radius:8px;
-          overflow:hidden; border:1px solid rgba(255,255,255,0.15);
+          flex: 0 0 calc(33.333% - 7px);
+          min-width: 0;
+          scroll-snap-align: start;
+          display: block;
+          text-decoration: none;
+          color: white;
+          background: rgba(255,255,255,0.1);
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.15);
         `;
         card.innerHTML = `
           <div style="width:100%;aspect-ratio:16/10;overflow:hidden;background:rgba(0,0,0,0.3);">
@@ -683,55 +650,37 @@ document.addEventListener("DOMContentLoaded", function () {
           </div>
           <div style="padding:8px 10px 10px;">
             <p style="margin:0 0 6px;font-size:12px;font-weight:600;line-height:1.4;
-              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+              color:white;">
               ${article.title}
             </p>
             <div style="display:flex;gap:8px;align-items:center;">
-              <span style="font-size:10px;opacity:0.7;">${article.source}</span>
-              <span style="font-size:10px;opacity:0.5;">${article.date}</span>
+              <span style="font-size:10px;opacity:0.7;color:white;">${article.source}</span>
+              <span style="font-size:10px;opacity:0.5;color:white;">${article.date}</span>
             </div>
           </div>
         `;
         track.appendChild(card);
-      }
-    }
-
-    function startAutoplay() {
-      if (sliderConfig.autoplaySpeed && sliderConfig.autoplaySpeed > 0) {
-        autoplayTimer = setInterval(() => {
-          window.bannerSlider.next();
-        }, sliderConfig.autoplaySpeed);
-      }
-    }
-
-    function resetAutoplay() {
-      if (autoplayTimer) {
-        clearInterval(autoplayTimer);
-        startAutoplay();
-      }
+      });
     }
 
     // Load articles based on type
     if (sliderConfig.type === 'wordpress') {
       loadWordPressArticles(sliderConfig).then(data => {
-        articles.push(...data);
-        if (articles.length > 0) {
-          renderSlide();
-          startAutoplay();
+        if (data.length > 0) {
+          renderSlide(data);
         } else {
-          document.getElementById('slider-content').innerHTML = 
-            '<div style="font-size:12px; opacity:0.7;">Tidak ada artikel</div>';
+          const track = document.getElementById('slider-track');
+          if (track) track.innerHTML = '<div style="font-size:12px;opacity:0.7;color:white;padding:8px;">Tidak ada artikel</div>';
         }
       });
     } else if (sliderConfig.type === 'blogger') {
       loadBloggerArticles(sliderConfig).then(data => {
-        articles.push(...data);
-        if (articles.length > 0) {
-          renderSlide();
-          startAutoplay();
+        if (data.length > 0) {
+          renderSlide(data);
         } else {
-          document.getElementById('slider-content').innerHTML = 
-            '<div style="font-size:12px; opacity:0.7;">Tidak ada artikel</div>';
+          const track = document.getElementById('slider-track');
+          if (track) track.innerHTML = '<div style="font-size:12px;opacity:0.7;color:white;padding:8px;">Tidak ada artikel</div>';
         }
       });
     }
@@ -749,29 +698,24 @@ document.addEventListener("DOMContentLoaded", function () {
           `https://${config.subdomain}/wp-json/wp/v2/categories?search=${encodeURIComponent(config.filterValue)}&per_page=1&_fields=id`
         );
         const cats = await catRes.json();
-        if (cats.length > 0) {
-          url += `&categories=${cats[0].id}`;
-        }
+        if (cats.length > 0) url += `&categories=${cats[0].id}`;
+
       } else if (config.filterType === 'tags') {
         const tagRes = await fetch(
           `https://${config.subdomain}/wp-json/wp/v2/tags?search=${encodeURIComponent(config.filterValue)}&per_page=1&_fields=id`
         );
         const tags = await tagRes.json();
-        if (tags.length > 0) {
-          url += `&tags=${tags[0].id}`;
-        }
+        if (tags.length > 0) url += `&tags=${tags[0].id}`;
       }
-  
+
       const res = await fetch(url);
       const posts = await res.json();
-  
+
       return posts.map(post => {
-        // Ambil featured image dari _embedded
         let thumbnail = '';
         try {
           const media = post._embedded?.['wp:featuredmedia']?.[0];
-          // Coba ukuran medium dulu, fallback ke full
-          thumbnail = 
+          thumbnail =
             media?.media_details?.sizes?.medium?.source_url ||
             media?.media_details?.sizes?.thumbnail?.source_url ||
             media?.source_url ||
@@ -779,7 +723,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch(e) {
           thumbnail = '';
         }
-  
+
         return {
           title: post.title.rendered,
           link: post.link,
@@ -788,7 +732,7 @@ document.addEventListener("DOMContentLoaded", function () {
           thumbnail: thumbnail
         };
       });
-  
+
     } catch (err) {
       console.warn(`Failed to load from ${config.subdomain}:`, err);
       return [];
@@ -796,7 +740,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ============================================================
-  // BLOGGER LOADER (dengan unique callback name)
+  // BLOGGER LOADER
   // ============================================================
   function loadBloggerArticles(config) {
     return new Promise((resolve) => {
@@ -807,15 +751,23 @@ document.addEventListener("DOMContentLoaded", function () {
         delete window[cbName];
 
         const entries = data.feed.entry || [];
-        resolve(entries.map(entry => ({
-          title: entry.title.$t,
-          link: entry.link.find(l => l.rel === 'alternate').href,
-          date: new Date(entry.published.$t).toLocaleDateString('id-ID'),
-          source: config.subdomain
-        })));
+        resolve(entries.map(entry => {
+          // Ambil thumbnail dari media$thumbnail jika ada
+          let thumbnail = '';
+          try {
+            thumbnail = entry.media$thumbnail?.url?.replace('/s72-c/', '/s400-c/') || '';
+          } catch(e) {}
+
+          return {
+            title: entry.title.$t,
+            link: entry.link.find(l => l.rel === 'alternate').href,
+            date: new Date(entry.published.$t).toLocaleDateString('id-ID'),
+            source: config.subdomain,
+            thumbnail: thumbnail
+          };
+        }));
       };
 
-      // Blogger uses labels (same as category)
       const labelPath = config.filterValue ? `/-/${encodeURIComponent(config.filterValue)}/` : '/';
       const script = document.createElement('script');
       script.id = cbName;
@@ -839,6 +791,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 })();
+
+
+
 
 /* Scroll Control (Passive for Performance) */
 (function() {
