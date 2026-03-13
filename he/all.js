@@ -533,15 +533,19 @@ document.addEventListener("DOMContentLoaded", function () {
     // Build banner HTML
     let html = `
       <div class="centralized-banner" style="
-        position: relative;
-        width: 100%;
-        height: ${height};
-        border-radius: ${config.display.borderRadius};
+        width: -moz-available;
+        width: -webkit-fill-available;
+        height: fit-content;
+        border-radius: 0.5rem;
         overflow: hidden;
         background-image: url('${config.background.image}');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        display: flex!important;
+        position: relative;
+        gap: 1rem;
+        margin-block: 2rem;
       ">
     `;
 
@@ -552,14 +556,6 @@ document.addEventListener("DOMContentLoaded", function () {
         <img 
           src="${config.event.image}" 
           alt="Event Banner"
-          style="
-            position: absolute;
-            ${position}
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            pointer-events: none;
-          "
         >
       `;
     }
@@ -568,12 +564,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (config.slider && config.slider.enabled && config.slider.subdomain) {
       html += `
         <div id="banner-slider" style="
-          position: absolute;
-          bottom: 0; left: 0; right: 0;
-          background: rgba(0,0,0,0.75);
-          backdrop-filter: blur(8px);
-          padding: 12px 40px;
-        ">
+          position: relative;">
           <button onclick="window.bannerSlider.prev()" style="
             position:absolute;left:6px;top:50%;transform:translateY(-50%);
             background:rgba(255,255,255,0.15);border:none;color:white;
