@@ -569,44 +569,24 @@ document.addEventListener("DOMContentLoaded", function () {
       html += `
         <div id="banner-slider" style="
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: rgba(0, 0, 0, 0.8);
-          backdrop-filter: blur(10px);
-          color: white;
-          padding: 12px 20px;
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          overflow: hidden;
+          bottom: 0; left: 0; right: 0;
+          background: rgba(0,0,0,0.75);
+          backdrop-filter: blur(8px);
+          padding: 12px 40px;
         ">
-          <div style="flex-shrink: 0; font-size: 12px; opacity: 0.7;">BERITA</div>
-          <div id="slider-content" style="flex: 1; overflow: hidden;">
-            <div style="font-size: 14px; font-weight: 600;">Memuat artikel...</div>
-          </div>
-          <div id="slider-nav" style="display: flex; gap: 8px; flex-shrink: 0;">
-            <button onclick="window.bannerSlider.prev()" style="
-              background: rgba(255,255,255,0.2);
-              border: none;
-              color: white;
-              width: 30px;
-              height: 30px;
-              border-radius: 50%;
-              cursor: pointer;
-              font-size: 16px;
-            ">‹</button>
-            <button onclick="window.bannerSlider.next()" style="
-              background: rgba(255,255,255,0.2);
-              border: none;
-              color: white;
-              width: 30px;
-              height: 30px;
-              border-radius: 50%;
-              cursor: pointer;
-              font-size: 16px;
-            ">›</button>
-          </div>
+          <button onclick="window.bannerSlider.prev()" style="
+            position:absolute;left:6px;top:50%;transform:translateY(-50%);
+            background:rgba(255,255,255,0.15);border:none;color:white;
+            width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;
+          ">‹</button>
+          <div id="slider-track" style="
+            display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow:hidden;
+          "></div>
+          <button onclick="window.bannerSlider.next()" style="
+            position:absolute;right:6px;top:50%;transform:translateY(-50%);
+            background:rgba(255,255,255,0.15);border:none;color:white;
+            width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;
+          ">›</button>
         </div>
       `;
     }
@@ -687,27 +667,42 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     function renderSlide() {
-      const content = document.getElementById('slider-content');
-      if (!content || articles.length === 0) return;
-
-      const article = articles[currentIndex];
-      content.innerHTML = `
-        <a href="${article.link}" target="_blank" style="
-          color: white;
-          text-decoration: none;
-          display: block;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        ">
-          <div style="font-size: 14px; font-weight: 600; margin-bottom: 2px;">
-            ${article.title}
+      const track = document.getElementById('slider-track');
+      if (!track || articles.length === 0) return;
+    
+      const visibleCount = 3;
+      track.innerHTML = '';
+    
+      for (let i = 0; i < visibleCount; i++) {
+        const idx = (currentIndex + i) % articles.length;
+        const article = articles[idx];
+        const card = document.createElement('a');
+        card.href = article.link;
+        card.target = '_blank';
+        card.style.cssText = `
+          display:block; text-decoration:none; color:white;
+          background:rgba(255,255,255,0.1); border-radius:8px;
+          overflow:hidden; border:1px solid rgba(255,255,255,0.15);
+        `;
+        card.innerHTML = `
+          <div style="width:100%;aspect-ratio:16/10;overflow:hidden;background:rgba(0,0,0,0.3);">
+            <img src="${article.thumbnail || ''}" alt=""
+              style="width:100%;height:100%;object-fit:cover;display:block;"
+              onerror="this.style.display='none'"/>
           </div>
-          <div style="font-size: 11px; opacity: 0.7;">
-            ${article.source} • ${article.date}
+          <div style="padding:8px 10px 10px;">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:600;line-height:1.4;
+              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+              ${article.title}
+            </p>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span style="font-size:10px;opacity:0.7;">${article.source}</span>
+              <span style="font-size:10px;opacity:0.5;">${article.date}</span>
+            </div>
           </div>
-        </a>
-      `;
+        `;
+        track.appendChild(card);
+      }
     }
 
     function startAutoplay() {
@@ -756,7 +751,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   async function loadWordPressArticles(config) {
     try {
-      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date`;
+      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date,jetpack_featured_media_url`;
       
       // Get filter ID based on filterType
       if (config.filterType === 'category') {
@@ -784,6 +779,7 @@ document.addEventListener("DOMContentLoaded", function () {
         title: post.title.rendered,
         link: post.link,
         date: new Date(post.date).toLocaleDateString('id-ID'),
+        thumbnail: post.jetpack_featured_media_url || '',
         source: config.subdomain
       }));
     } catch (err) {
