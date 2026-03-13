@@ -1,7 +1,10 @@
 #dynamic-news-nav {
-    padding-inline: var(--edge);
+    padding-inline: 20px;
     background: #161d24;
     min-height: 50px;
+}
+.trending-container {
+    padding-inline: 20px;
 }
 
 .recent-blg-multi.grid ul li img, .recent-blg-multi.grid ul li .post-img, .recent-wp-multi.grid ul li img, .recent-wp-multi.grid ul li .post-img, .recent-blg .post-img, .recent-wp .post-img, .recent-blg .post-img img, .recent-wp .post-img img, .recent-wp-multi ul li img, .recent-wp-multi ul li .post-img {
