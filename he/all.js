@@ -751,9 +751,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   async function loadWordPressArticles(config) {
     try {
-      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date,jetpack_featured_media_url`;
+      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date,featured_media&_embed=1`;
       
-      // Get filter ID based on filterType
       if (config.filterType === 'category') {
         const catRes = await fetch(
           `https://${config.subdomain}/wp-json/wp/v2/categories?search=${encodeURIComponent(config.filterValue)}&per_page=1&_fields=id`
@@ -771,17 +770,34 @@ document.addEventListener("DOMContentLoaded", function () {
           url += `&tags=${tags[0].id}`;
         }
       }
-
+  
       const res = await fetch(url);
       const posts = await res.json();
-
-      return posts.map(post => ({
-        title: post.title.rendered,
-        link: post.link,
-        date: new Date(post.date).toLocaleDateString('id-ID'),
-        thumbnail: post.jetpack_featured_media_url || '',
-        source: config.subdomain
-      }));
+  
+      return posts.map(post => {
+        // Ambil featured image dari _embedded
+        let thumbnail = '';
+        try {
+          const media = post._embedded?.['wp:featuredmedia']?.[0];
+          // Coba ukuran medium dulu, fallback ke full
+          thumbnail = 
+            media?.media_details?.sizes?.medium?.source_url ||
+            media?.media_details?.sizes?.thumbnail?.source_url ||
+            media?.source_url ||
+            '';
+        } catch(e) {
+          thumbnail = '';
+        }
+  
+        return {
+          title: post.title.rendered,
+          link: post.link,
+          date: new Date(post.date).toLocaleDateString('id-ID'),
+          source: config.subdomain,
+          thumbnail: thumbnail
+        };
+      });
+  
     } catch (err) {
       console.warn(`Failed to load from ${config.subdomain}:`, err);
       return [];
