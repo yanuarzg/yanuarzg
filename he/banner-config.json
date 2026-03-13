@@ -1,1 +1,28 @@
-
+{
+  "background": {
+    "image": "https://blogger.googleusercontent.com/img/a/AVvXsEgmAHfVa3ckmEC4BuerCsAExXuw3WsVWtMgJx2wLcSU_nbGQDAeX2BpxaWD9b0wedpj9f99nKl68ndzWZPF8opEFQEWLWifmwTVuSQoKSmPcKbBAbSW1isV8pjFnGkircuFsR_T3ng1diy2kkCHdtCB_PHfDd5TyzHf5LVvr_dqpxfk1rTUklW8uLb2h1si=s1280"
+  },
+  "event": {
+    "image": "https://blogger.googleusercontent.com/img/a/AVvXsEiCof_xbpJNdD9L9I8_b61sjyNC0vN3RX9Drm9IFviivfkiXPM5sSxUG6SjC1VBr7cGP7eVhixAXG4V42XU3nc0LJZQoSf4qqAQs-DORp6iLvfAQNjozmIFGBDtLKrpyYI2S670WokSJsN0QM8ecIb3CMEsazx1pvtqLYKredQItPVHnkGWdLYkCfM4R0VY=s1280",
+    "position": {
+      "horizontal": "left",
+      "vertical": "center"
+    }
+  },
+  "slider": {
+    "enabled": true,
+    "type": "wordpress",
+    "subdomain": "tangsel.harianexpress.com",
+    "filterType": "category",
+    "filterValue": "Headline",
+    "count": 5,
+    "autoplaySpeed": 5000
+  },
+  "display": {
+    "heightDesktop": "400px",
+    "heightMobile": "250px",
+    "borderRadius": "12px",
+    "showOnSites": []
+  },
+  "version": 1773395007648
+}
