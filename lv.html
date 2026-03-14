@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>epic website</title>
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #111;
+    color: #eee;
+  }
+  .container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    border: 8px solid #000;
+  }
+  header {
+    padding: 15px 25px;
+    background: #000;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-bottom: 4px solid #333;
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+  .panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 4px solid #333;
+  }
+  .panel:last-child {
+    border-right: none;
+  }
+  .panel-header {
+    padding: 10px 15px;
+    background: #222;
+    font-weight: 600;
+    border-bottom: 2px solid #444;
+  }
+  textarea {
+    flex: 1;
+    background: #1a1a1a;
+    color: #0f0;
+    border: none;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 15px;
+    resize: none;
+    outline: none;
+  }
+  iframe {
+    flex: 1;
+    background: white;
+    border: none;
+    width: 100%;
+  }
+  .toolbar {
+    padding: 8px;
+    background: #222;
+    text-align: center;
+  }
+  button {
+    background: #0f0;
+    color: black;
+    border: none;
+    padding: 8px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 0 5px;
+  }
+  button:hover {
+    background: #0c0;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>epic website</header>
+  
+  <div class="main">
+    <!-- Code Panel -->
+    <div class="panel">
+      <div class="panel-header">code (type in here)</div>
+      <textarea id="code" spellcheck="false"></textarea>
+      <div class="toolbar">
+        <button onclick="updatePreview()">Run →</button>
+        <button onclick="resetExample()">Load Example</button>
+      </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="panel">
+      <div class="panel-header">html preview</div>
+      <iframe id="preview"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+// Default example code
+const defaultCode = `<!DOCTYPE html>
+<html>
+<head>
+  <title>My Epic Page</title>
+  <style>
+    body { font-family: sans-serif; background: #222; color: white; text-align: center; padding: 50px; }
+    h1 { color: #0f0; }
+  </style>
+</head>
+<body>
+  <h1>🚀 Hello from epic website!</h1>
+  <p>Type HTML on the left and watch it appear here instantly.</p>
+  <button onclick="alert('It works!')">Click me</button>
+</body>
+</html>`;
+
+// Elements
+const textarea = document.getElementById('code');
+const iframe = document.getElementById('preview');
+
+// Update the preview
+function updatePreview() {
+  const code = textarea.value || '<h1 style="color:red">Nothing to preview yet...</h1>';
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(code);
+  doc.close();
+}
+
+// Live updates while typing (with a tiny delay so it doesn't lag)
+let timeout;
+textarea.addEventListener('input', () => {
+  clearTimeout(timeout);
+  timeout = setTimeout(updatePreview, 600);
+});
+
+// Load example
+function resetExample() {
+  textarea.value = defaultCode;
+  updatePreview();
+}
+
+// Start it up
+window.onload = () => {
+  textarea.value = defaultCode;
+  updatePreview();
+};
+</script>
+
+</body>
+</html>
