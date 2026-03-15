@@ -650,13 +650,12 @@ document.addEventListener("DOMContentLoaded", function () {
           </div>
           <div style="padding:8px 10px 10px;">
             <p style="margin:0 0 6px;font-size:12px;font-weight:600;line-height:1.4;
-              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-              color:white;">
+              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
               ${article.title}
             </p>
             <div style="display:flex;gap:8px;align-items:center;">
-              <span style="font-size:10px;opacity:0.7;color:white;">${article.source}</span>
-              <span style="font-size:10px;opacity:0.5;color:white;">${article.date}</span>
+              <span style="font-size:10px;opacity:0.7;">${article.source}</span>
+              <span style="font-size:10px;opacity:0.5;">${article.date}</span>
             </div>
           </div>
         `;
@@ -671,7 +670,7 @@ document.addEventListener("DOMContentLoaded", function () {
           renderSlide(data);
         } else {
           const track = document.getElementById('slider-track');
-          if (track) track.innerHTML = '<div style="font-size:12px;opacity:0.7;color:white;padding:8px;">Tidak ada artikel</div>';
+          if (track) track.innerHTML = '<div style="font-size:12px;opacity:0.7;padding:8px;">Tidak ada artikel</div>';
         }
       });
     } else if (sliderConfig.type === 'blogger') {
@@ -680,7 +679,7 @@ document.addEventListener("DOMContentLoaded", function () {
           renderSlide(data);
         } else {
           const track = document.getElementById('slider-track');
-          if (track) track.innerHTML = '<div style="font-size:12px;opacity:0.7;color:white;padding:8px;">Tidak ada artikel</div>';
+          if (track) track.innerHTML = '<div style="font-size:12px;opacity:0.7;padding:8px;">Tidak ada artikel</div>';
         }
       });
     }
