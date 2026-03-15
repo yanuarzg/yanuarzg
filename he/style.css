@@ -62,6 +62,10 @@ blockquote:after, .note:after, .success:after, .warning:after, .danger:after { c
     max-width: 30%!important;
 }
 
+#banner-slider * {
+    color: black;
+}
+
 .jl_block_content {
     padding-bottom: 0!important;
     margin: 0!important;
