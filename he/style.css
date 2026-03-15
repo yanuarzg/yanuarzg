@@ -1,4 +1,5 @@
 :root {
+	--content-width: 1220px;
 	--bg-color: #ffffff;
 	--bg-card: #ffffff;
 	--bg-shade: rgba(105, 105, 105, 0.05);
@@ -72,8 +73,12 @@ blockquote:after, .note:after, .success:after, .warning:after, .danger:after { c
 .jl_home_bw, .jlc-container, footer#jl-footer-custpl > div > div {
 	width: -moz-available;
 	width: -webkit-fill-available;
-	margin: 0!important;
+	margin: 0 auto!important;
 	max-width: none;
+}
+
+.jlc-container {
+    max-width: var(--content-width)!important;
 }
 
 body, body * {
