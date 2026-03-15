@@ -691,7 +691,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   async function loadWordPressArticles(config) {
     try {
-      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date,featured_media&_embed=1`;
+      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date,_embedded&_embed=1`;
+
       
       if (config.filterType === 'category') {
         const catRes = await fetch(
