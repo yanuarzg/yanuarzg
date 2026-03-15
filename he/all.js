@@ -691,40 +691,39 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   async function loadWordPressArticles(config) {
     try {
-      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}&_fields=id,title,link,date,_embedded&_embed=1`;
-
-      
+      let url = `https://${config.subdomain}/wp-json/wp/v2/posts?per_page=${config.count}`;
+  
       if (config.filterType === 'category') {
-        const catRes = await fetch(
-          `https://${config.subdomain}/wp-json/wp/v2/categories?search=${encodeURIComponent(config.filterValue)}&per_page=1&_fields=id`
-        );
+        const catRes = await fetch(`https://${config.subdomain}/wp-json/wp/v2/categories?search=${encodeURIComponent(config.filterValue)}&per_page=1`);
         const cats = await catRes.json();
         if (cats.length > 0) url += `&categories=${cats[0].id}`;
-
       } else if (config.filterType === 'tags') {
-        const tagRes = await fetch(
-          `https://${config.subdomain}/wp-json/wp/v2/tags?search=${encodeURIComponent(config.filterValue)}&per_page=1&_fields=id`
-        );
+        const tagRes = await fetch(`https://${config.subdomain}/wp-json/wp/v2/tags?search=${encodeURIComponent(config.filterValue)}&per_page=1`);
         const tags = await tagRes.json();
         if (tags.length > 0) url += `&tags=${tags[0].id}`;
       }
-
+  
       const res = await fetch(url);
       const posts = await res.json();
-
-      return posts.map(post => {
+  
+      // Fetch semua media secara paralel
+      const results = await Promise.all(posts.map(async post => {
         let thumbnail = '';
-        try {
-          const media = post._embedded?.['wp:featuredmedia']?.[0];
-          thumbnail =
-            media?.media_details?.sizes?.medium?.source_url ||
-            media?.media_details?.sizes?.thumbnail?.source_url ||
-            media?.source_url ||
-            '';
-        } catch(e) {
-          thumbnail = '';
+  
+        if (post.featured_media && post.featured_media > 0) {
+          try {
+            const mediaRes = await fetch(
+              `https://${config.subdomain}/wp-json/wp/v2/media/${post.featured_media}?_fields=source_url,media_details`
+            );
+            const media = await mediaRes.json();
+            thumbnail =
+              media?.media_details?.sizes?.medium?.source_url ||
+              media?.media_details?.sizes?.thumbnail?.source_url ||
+              media?.source_url ||
+              '';
+          } catch(e) {}
         }
-
+  
         return {
           title: post.title.rendered,
           link: post.link,
@@ -732,8 +731,10 @@ document.addEventListener("DOMContentLoaded", function () {
           source: config.subdomain,
           thumbnail: thumbnail
         };
-      });
-
+      }));
+  
+      return results;
+  
     } catch (err) {
       console.warn(`Failed to load from ${config.subdomain}:`, err);
       return [];
