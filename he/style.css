@@ -512,6 +512,9 @@ iframe {
 	align-items: center;
 }
 
+.elementor-element-9f01d48 {
+    padding-inline: 20px;
+}
 
 /* laptop */
 @media only screen and (max-width:1366px){
@@ -624,6 +627,18 @@ iframe {
 	.btn-primary.en span:not(.mobile-text), .jl_shwp.jl_shsmb, form#search-form, .post_sw {
 		display: none!important;
 	}
+		.elementor-element-9f01d48, .news-nav-wrapper {
+    padding-inline: 0;
+	}
+
+	.centralized-banner {
+    flex-direction: column;
+	}
+	.centralized-banner img {
+    max-width: -moz-available!important;
+    max-width: -webkit-fill-available!important;
+	}
+
 }
 
 a.logo_link img, .jlh-d .logo_small_wrapper_table .logo_small_wrapper .logo_link img, .logo_small_wrapper_table .logo_small_wrapper .logo_link * {
