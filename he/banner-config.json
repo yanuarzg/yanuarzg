@@ -1,9 +1,9 @@
 {
   "background": {
-    "image": "https://blogger.googleusercontent.com/img/a/AVvXsEgmAHfVa3ckmEC4BuerCsAExXuw3WsVWtMgJx2wLcSU_nbGQDAeX2BpxaWD9b0wedpj9f99nKl68ndzWZPF8opEFQEWLWifmwTVuSQoKSmPcKbBAbSW1isV8pjFnGkircuFsR_T3ng1diy2kkCHdtCB_PHfDd5TyzHf5LVvr_dqpxfk1rTUklW8uLb2h1si=s1280"
+    "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZhHZ367X7kXynBGKVowUv-qCY2srAzkeyDlf027rvy7xPxYIdUj1EW-tbM2MpVladsbMgudVlblQZwqEbyrAhTi6ne028dwtgryxqvyxa8X5Sbkz2oYXNmxxHjqNw931teo-aONed1DkJenWbRfyTozh0ujZS82THT07DKsHCMp2AcACunrNiyeJym_0/s1600/grids-bg.webp"
   },
   "event": {
-    "image": "https://blogger.googleusercontent.com/img/a/AVvXsEiCof_xbpJNdD9L9I8_b61sjyNC0vN3RX9Drm9IFviivfkiXPM5sSxUG6SjC1VBr7cGP7eVhixAXG4V42XU3nc0LJZQoSf4qqAQs-DORp6iLvfAQNjozmIFGBDtLKrpyYI2S670WokSJsN0QM8ecIb3CMEsazx1pvtqLYKredQItPVHnkGWdLYkCfM4R0VY=s1280",
+    "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjfaaLWon6dpG-TghFxKHVVktuoDVfggfCQyDCTNguAXzZ_nKLVkvd6KJVGghunF69TQAeYW8DN-x6zinu1_60OPNRbfvTOv_02EohUbuB0Osz10uYUP6NpQmRFn-Ljek3ePe9ZuuMC2rUPSckHIct-_GK9_0aAripJhK9Ujhyphenhyphenof-JqXpFyBvXH1UHqasI/s1350/Biru%20Modern%20Ucapan%20Idul%20Fitri%20Instagram%20Post_20260316_140108_0000.png",
     "position": {
       "horizontal": "left",
       "vertical": "center"
@@ -12,7 +12,7 @@
   "slider": {
     "enabled": true,
     "type": "wordpress",
-    "subdomain": "tangsel.harianexpress.com",
+    "subdomain": "harianexpress.com",
     "filterType": "category",
     "filterValue": "Headline",
     "count": 5,
@@ -21,5 +21,5 @@
   "display": {
     "showOnSites": []
   },
-  "version": 1773410970507
+  "version": 1773644658227
 }
