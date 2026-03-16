@@ -285,7 +285,7 @@ ul#menu-top-menu ul.sub-menu .menu-item {
 	gap: 2rem 4%;
 	margin-block-end: 1.5rem;
 }
-.recent-blg-multi.grid ul li,.recent-wp-multi.grid ul li,.recent-blg.grid ul li,.recent-wp.grid ul li {
+.recent-blg-multi.grid ul li, .recent-wp-multi.grid ul li, .recent-blg.grid ul li, .recent-wp.grid ul li {
 	flex: 1 1 30%;
 	max-width: 31%;
 	min-width: 30%;
@@ -564,7 +564,7 @@ a.logo_link img, .jlh-d .logo_small_wrapper_table .logo_small_wrapper .logo_link
 	.dw header, .up header, .admin-bar.dw header {
 		top: 0!important;
 	}
-	.recent-blg-multi.grid ul li {
+	.recent-blg-multi.grid ul li, .recent-wp-multi.grid ul li, .recent-blg.grid ul li, .recent-wp.grid ul li {
 		flex: 1 1 45%;
 		max-width: 49%;
 		min-width: 45%;
