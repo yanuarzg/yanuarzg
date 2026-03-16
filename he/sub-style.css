@@ -36,7 +36,9 @@
 
 /* tablet */
 @media only screen and (max-width:770px) {
-
+    .elementor-element.elementor-element-7daeedd {
+        padding-inline: 0;
+    }
 }
 
 
