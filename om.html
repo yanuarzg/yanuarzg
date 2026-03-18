@@ -192,34 +192,7 @@
     .btn-wa:hover { background: var(--green-dark); }
     .btn-wa:active { transform: scale(.98); }
 
-    /* ── WA MODAL ── */
-    #wa-modal {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.45); z-index: 9997;
-      align-items: center; justify-content: center; padding: 16px;
-    }
-    #wa-modal.open { display: flex; }
-    .wa-box {
-      background: var(--white); border-radius: 16px; padding: 24px 22px;
-      width: min(360px, 100%); box-shadow: var(--shadow-lg);
-    }
-    .wa-box h2 { font-size: 16px; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-    .wa-box p  { font-size: 12.5px; color: var(--text-sub); margin-bottom: 14px; line-height: 1.5; }
-    .wa-input {
-      width: 100%; padding: 11px 13px; border: 1.5px solid var(--border);
-      border-radius: 9px; font-family: var(--font); font-size: 14px; outline: none;
-      transition: border-color .2s;
-    }
-    .wa-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,115,232,.1); }
-    .wa-actions { display: flex; gap: 8px; margin-top: 14px; }
-    .wa-actions button {
-      flex: 1; padding: 11px; border-radius: 9px; border: none;
-      font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s;
-    }
-    .wa-cancel { background: var(--bg); color: var(--text-sub); }
-    .wa-cancel:hover { background: var(--border); }
-    .wa-send   { background: var(--green); color: var(--white); }
-    .wa-send:hover { background: var(--green-dark); }
+    /* WA modal CSS dihapus — nomor sudah hardcode, tidak perlu modal */
 
     /* ── LOADING / TOAST ── */
     #loading-overlay {
@@ -338,25 +311,7 @@
   </button>
 </div>
 
-<!-- WA Modal -->
-<div id="wa-modal">
-  <div class="wa-box">
-    <h2>
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="#25d366">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.115 1.527 5.843L.057 23.428a.75.75 0 0 0 .918.93l5.656-1.478A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.13-1.424l-.368-.217-3.792.991.996-3.7-.24-.382A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-      </svg>
-      Kirim Order via WhatsApp
-    </h2>
-    <p>Masukkan nomor WhatsApp tujuan (kurir/penerima).<br>Nomor akan disimpan otomatis untuk penggunaan berikutnya.</p>
-    <input class="wa-input" id="wa-number" type="tel"
-      placeholder="Contoh: 08123456789 atau +628123456789" maxlength="20" />
-    <div class="wa-actions">
-      <button class="wa-cancel" onclick="closeWaModal()">Batal</button>
-      <button class="wa-send" onclick="sendWhatsApp()">Kirim Sekarang →</button>
-    </div>
-  </div>
-</div>
+<!-- No WA modal needed — nomor sudah di-set di CONFIG.WA_NUMBER -->
 
 <div id="loading-overlay"><div class="spinner"></div></div>
 <div id="toast"></div>
@@ -383,11 +338,10 @@ const CONFIG = {
   MIN_COST: 5000,
 
   /**
-   * Nomor WhatsApp default (isi jika ingin nomor terisi otomatis).
-   * Format: '08xxx' atau '+628xxx'
-   * Kosongkan jika tidak ingin ada default: ''
+   * Nomor WhatsApp tujuan (kurir/penerima) — sudah di-set permanen.
+   * Ubah jika nomor berubah.
    */
-  DEFAULT_WA_NUMBER: '6289507785333',
+  WA_NUMBER: '6289507785333',
 };
 /* ================================================================ */
 
@@ -425,7 +379,7 @@ function renderStops() {
     const isFirst = i === 0, isLast = i === total - 1, canDel = total > 2;
     const pinClass  = isFirst ? 'origin' : isLast ? 'dest' : 'stop';
     const pinLetter = isFirst ? 'A' : isLast ? String.fromCharCode(64 + total) : String.fromCharCode(65 + i);
-    const ph = isFirst ? 'Lokasi asal...' : isLast ? 'Lokasi tujuan...' : `Titik pemberhentian ${i}...`;
+    const ph = isFirst ? 'Cari lokasi atau paste link Google Maps...' : isLast ? 'Cari tujuan atau paste link Google Maps...' : `Titik pemberhentian ${i}...`;
     const hasVal = !!(stop.label);
 
     const div = document.createElement('div');
@@ -475,6 +429,18 @@ function renderStops() {
     inp.addEventListener('focus', () => { activeInputIndex = i; });
     inp.addEventListener('blur',  () => setTimeout(() => closeAC(i), 150));
     inp.addEventListener('input', () => onInput(i));
+
+    // Deteksi paste Google Maps URL secara instan
+    inp.addEventListener('paste', e => {
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+      if (isGoogleMapsUrl(pasted)) {
+        e.preventDefault();
+        inp.value = pasted;
+        const clr = document.getElementById(`clr-${i}`);
+        if (clr) clr.classList.add('show');
+        resolveGoogleMapsLink(i, pasted);
+      }
+    });
 
     // FIX #2: tombol clear menggunakan mousedown + preventDefault
     // agar blur dari input tidak terjadi lebih dulu sebelum clear diproses
@@ -539,6 +505,14 @@ function onInput(i) {
     closeAC(i);
     return;
   }
+
+  // ── Deteksi Google Maps URL yang di-paste / diketik ──
+  if (isGoogleMapsUrl(val)) {
+    closeAC(i);
+    resolveGoogleMapsLink(i, val);
+    return;
+  }
+
   if (val.trim().length < 3) { closeAC(i); return; }
 
   clearTimeout(acTimers[i]);
@@ -752,33 +726,14 @@ function clearRoute() {
   document.getElementById('btn-wa').classList.remove('visible');
 }
 
-/* ── WHATSAPP ── */
-function openWaModal() {
-  const inp = document.getElementById('wa-number');
-  inp.value = localStorage.getItem('wa_number') || CONFIG.DEFAULT_WA_NUMBER || '';
-  document.getElementById('wa-modal').classList.add('open');
-  setTimeout(() => inp.focus(), 120);
-}
-
-function closeWaModal() {
-  document.getElementById('wa-modal').classList.remove('open');
-}
+/* ── WHATSAPP — kirim langsung ke nomor tetap (CONFIG.WA_NUMBER) ── */
+function openWaModal() { sendWhatsApp(); } // tombol memanggil ini
 
 function sendWhatsApp() {
-  const raw = document.getElementById('wa-number').value.trim();
-  if (!raw) { showToast('Masukkan nomor WhatsApp terlebih dahulu'); return; }
-
-  // normalisasi → 62xxx
-  let num = raw.replace(/\D/g, '');
-  if      (num.startsWith('0'))  num = '62' + num.slice(1);
-  else if (!num.startsWith('62')) num = '62' + num;
-
-  // simpan ke localStorage
-  localStorage.setItem('wa_number', raw);
-
   const lokasi = stops.map((s, i) => {
-    const tag = i === 0 ? '📍 Asal' : i === stops.length - 1 ? '🏁 Tujuan' : `📌 Stop ${i}`;
-    return `${tag}: ${s.label || '-'}`;
+    const tag  = i === 0 ? '📍 Asal' : i === stops.length - 1 ? '🏁 Tujuan' : `📌 Stop ${i}`;
+    const gmap = s.latlng ? `https://maps.google.com/?q=${s.latlng.lat},${s.latlng.lng}` : '';
+    return `${tag}: ${s.label || '-'}${gmap ? '\n    🗺 ' + gmap : ''}`;
   }).join('\n');
 
   const pesan = [
@@ -793,17 +748,100 @@ function sendWhatsApp() {
     '_Dikirim via Kalkulator Ongkir Kurir_ 🛵',
   ].join('\n');
 
-  window.open(`https://wa.me/${num}?text=${encodeURIComponent(pesan)}`, '_blank');
-  closeWaModal();
+  window.open(`https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(pesan)}`, '_blank');
 }
 
-document.getElementById('wa-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('wa-modal')) closeWaModal();
-});
-document.getElementById('wa-number').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendWhatsApp();
-  if (e.key === 'Escape') closeWaModal();
-});
+/* ── GOOGLE MAPS LINK RESOLVER ──────────────────────────────────────
+   Mendukung format:
+   • https://maps.app.goo.gl/xxxxx         (short link)
+   • https://maps.google.com/?q=lat,lng
+   • https://www.google.com/maps?q=lat,lng
+   • https://www.google.com/maps/@lat,lng,...
+   • https://www.google.com/maps/place/.../@lat,lng,...
+   Cara kerja short link (goo.gl/maps): browser tidak bisa follow redirect
+   lintas-origin, jadi kita pakai API allorigins.win sebagai proxy untuk
+   membaca Location header dari server Google.
+──────────────────────────────────────────────────────────────────── */
+function isGoogleMapsUrl(str) {
+  return /maps\.app\.goo\.gl|maps\.google\.com|google\.com\/maps/i.test(str.trim());
+}
+
+function extractCoordsFromUrl(url) {
+  // Coba ekstrak langsung dari URL (tanpa redirect)
+  // Format: @lat,lng  atau  ?q=lat,lng  atau  /place/.../lat,lng
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  }
+  return null;
+}
+
+async function resolveGoogleMapsLink(idx, rawUrl) {
+  const url = rawUrl.trim();
+  showToast('Memproses link Google Maps…');
+
+  // 1. Coba ekstrak koordinat langsung dari URL
+  const direct = extractCoordsFromUrl(url);
+  if (direct) {
+    await applyCoords(idx, direct.lat, direct.lng);
+    return;
+  }
+
+  // 2. Untuk short link (maps.app.goo.gl), resolve via proxy untuk dapat
+  //    URL panjang yang mengandung koordinat
+  try {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res  = await fetch(proxyUrl);
+    const data = await res.json();
+
+    // allorigins mengembalikan final URL di data.status.url
+    const finalUrl = data?.status?.url || '';
+    const coords   = extractCoordsFromUrl(finalUrl);
+
+    if (coords) {
+      await applyCoords(idx, coords.lat, coords.lng);
+      return;
+    }
+
+    // 3. Fallback: coba cari koordinat di dalam HTML respons
+    const html = data?.contents || '';
+    const m = html.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) ||
+              html.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (m) {
+      await applyCoords(idx, parseFloat(m[1]), parseFloat(m[2]));
+      return;
+    }
+
+    showToast('Koordinat tidak ditemukan dari link tersebut');
+  } catch {
+    showToast('Gagal memproses link Google Maps');
+  }
+}
+
+async function applyCoords(idx, lat, lng) {
+  const latlng = { lat, lng };
+  stops[idx].latlng = latlng;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': 'id' } });
+    const d = await r.json();
+    stops[idx].label = d.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  } catch {
+    stops[idx].label = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  }
+  const inp = document.getElementById(`inp-${idx}`);
+  const clr = document.getElementById(`clr-${idx}`);
+  if (inp) inp.value = stops[idx].label;
+  if (clr) clr.classList.add('show');
+  placeMarker(idx, latlng);
+  map.setView([lat, lng], 15, { animate: true });
+  clearRoute();
+  showToast('Lokasi dari link Google Maps berhasil ✓');
+}
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar() {
