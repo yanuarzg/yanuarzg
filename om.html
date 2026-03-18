@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3:09 Kalkulator Jarak & Ongkir Kurir</title>
+  <title>3:23 Kalkulator Jarak & Ongkir Kurir</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -845,26 +845,25 @@ function extractDataCoords(url) {
 
 /**
  * Ekstrak semua waypoint dari URL Google Maps /dir/.
- * Strategi (prioritas koordinat, bukan nama):
+ * Koordinat diambil dari (urutan prioritas):
+ *   1. Koordinat langsung di path /dir/lat,lng/
+ *   2. data= block: !1d<lng>!2d<lat> (PC Chrome)
+ *   3. data= block: !3d<lat>!4d<lng> (Kiwi/mobile Chrome)
  *
- *  Tiap waypoint di path /dir/ bisa berupa koordinat atau nama tempat.
- *  Untuk waypoint berupa nama, cari koordinatnya dari sumber berikut:
- *    1. data= block: format !1d<lng>!2d<lat> (PC Chrome)
- *    2. data= block: format !3d<lat>!4d<lng> (Kiwi/mobile Chrome)
- *    3. Viewport @lat,lng — untuk tujuan akhir rute (selalu akurat)
+ * PENTING: viewport @lat,lng TIDAK digunakan — itu pusat kamera
+ * yang mencakup seluruh rute, bukan koordinat tujuan.
  *
- *  Nama asli dari path URL dipertahankan sebagai label (lebih akurat
- *  dari reverse geocode Nominatim).
+ * Jika tidak ada koordinat untuk suatu waypoint → { type:'name' }
+ * → akan ditangani oleh resolveByName dengan Nominatim structured query.
  */
 function extractDirWaypoints(url) {
-  // Ambil path antara /dir/ dan /@viewport
   const dirMatch = url.match(/\/maps\/dir\/(.+?)(?:\/@|$)/);
   if (!dirMatch) return [];
 
   const cleanPath = dirMatch[1].split(/\/data=/)[0];
   const pathParts = cleanPath.split('/').filter(p => p && p.trim());
 
-  // Pisahkan koordinat dan nama dari path
+  // Parse path: koordinat atau nama
   const pathItems = pathParts.map(p => {
     const decoded = decodeURIComponent(p.replace(/\+/g, ' ')).trim();
     const coord   = decoded.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
@@ -877,34 +876,28 @@ function extractDirWaypoints(url) {
     return null;
   }).filter(Boolean);
 
-  // Koordinat cadangan dari data= dan viewport
+  // Koordinat dari data= saja (TIDAK pakai viewport)
   const dataCoords = extractDataCoords(url);
-  const vpMatch    = url.match(/\/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  const viewport   = vpMatch ? { lat: parseFloat(vpMatch[1]), lng: parseFloat(vpMatch[2]) } : null;
 
-  // Kumpulkan semua koordinat cadangan (data= dulu, viewport terakhir)
-  const spare = [...dataCoords];
-  if (viewport) spare.push(viewport);
-
-  // Bangun hasil akhir
   const results = [];
   let spareIdx = 0;
 
   for (const item of pathItems) {
     if (item.type === 'coords') {
-      // Koordinat langsung dari path — pasti akurat
       results.push({ lat: item.lat, lng: item.lng });
     } else {
-      // Nama tempat — ambil koordinat dari spare (data= atau viewport)
-      if (spareIdx < spare.length) {
+      // Waypoint nama: pakai koordinat dari data= jika ada
+      if (spareIdx < dataCoords.length) {
         results.push({
-          lat:  spare[spareIdx].lat,
-          lng:  spare[spareIdx].lng,
-          name: item.name,   // label dari Google Maps path
+          lat:  dataCoords[spareIdx].lat,
+          lng:  dataCoords[spareIdx].lng,
+          name: item.name,
         });
         spareIdx++;
+      } else {
+        // Tidak ada koordinat → biarkan sebagai nama, resolveByName akan handle
+        results.push({ type: 'name', name: item.name });
       }
-      // Jika tidak ada spare → waypoint ini di-skip (tidak ada koordinat)
     }
   }
 
@@ -1118,11 +1111,16 @@ async function applyDirWaypoints(startIdx, url) {
   }
 
   if (waypoints.length === 1) {
-    await applyCoords(startIdx, waypoints[0].lat, waypoints[0].lng, waypoints[0].name || null);
+    const wp = waypoints[0];
+    if (wp.type === 'name') {
+      await resolveByName(startIdx, wp.name, null);
+    } else {
+      await applyCoords(startIdx, wp.lat, wp.lng, wp.name || null);
+    }
     return;
   }
 
-  showToast(`Ditemukan ${waypoints.length} titik, mengisi semua stop…`);
+  showToast(`Mengisi ${waypoints.length} lokasi…`);
 
   // Pastikan jumlah stops cukup
   while (stops.length < waypoints.length) {
@@ -1130,18 +1128,30 @@ async function applyDirWaypoints(startIdx, url) {
   }
   renderStops();
 
-  // Isi berurutan — semua pakai koordinat langsung, tidak ada Nominatim search
+  // Anchor = koordinat pertama yang diketahui, untuk viewbox resolveByName
+  const anchorWp = waypoints.find(w => w.type !== 'name');
+  const anchor   = anchorWp ? { lat: anchorWp.lat, lng: anchorWp.lng } : null;
+
   for (let i = 0; i < waypoints.length; i++) {
     const wp = waypoints[i];
-    await applyCoords(i, wp.lat, wp.lng, wp.name || null);
-    if (i < waypoints.length - 1) await sleep(200);
+    if (wp.type === 'name') {
+      // Tidak ada koordinat — cari via Nominatim structured query + anchor viewbox
+      await resolveByName(i, wp.name, anchor);
+    } else {
+      // Koordinat tersedia — pakai langsung, silent (tidak setView per-stop)
+      const label = wp.name || `${wp.lat}, ${wp.lng}`;
+      await applyCoords(i, wp.lat, wp.lng, label, true);
+    }
+    // Delay kecil antar request Nominatim (hanya relevan jika ada resolveByName)
+    if (i < waypoints.length - 1) await sleep(300);
   }
 
-  // Fit peta ke semua marker
+  // Satu kali fitBounds setelah semua stop terisi
   const lls = stops.slice(0, waypoints.length)
     .filter(s => s.latlng)
     .map(s => [s.latlng.lat, s.latlng.lng]);
   if (lls.length >= 2) map.fitBounds(lls, { padding: [60, 60] });
+  else if (lls.length === 1) map.setView(lls[0], 15);
 
   clearRoute();
   showToast(`${waypoints.length} lokasi berhasil diisi ✓`);
@@ -1251,22 +1261,22 @@ async function resolveByName(idx, name, anchor) {
 
 /**
  * Set koordinat + label untuk satu stop.
- * @param {number} idx    - indeks stop
- * @param {number} lat    - latitude
- * @param {number} lng    - longitude
- * @param {string} [label] - label teks (opsional). Jika diisi, TIDAK melakukan
- *                           reverse geocode — label langsung dipakai.
- *                           Jika kosong, reverse geocode via Nominatim.
+ * @param {number}  idx    - indeks stop
+ * @param {number}  lat    - latitude
+ * @param {number}  lng    - longitude
+ * @param {string}  [label]  - label teks. Jika ada, pakai langsung (tanpa reverse geocode).
+ *                             Jika null/undefined, reverse geocode via Nominatim.
+ * @param {boolean} [silent] - jika true, tidak memanggil map.setView / toast
+ *                             (dipakai saat mengisi banyak stop sekaligus)
  */
-async function applyCoords(idx, lat, lng, label) {
+async function applyCoords(idx, lat, lng, label, silent) {
   const latlng = { lat, lng };
   stops[idx].latlng = latlng;
 
   if (label) {
-    // Label sudah diketahui (dari nama di URL Google Maps) — pakai langsung
     stops[idx].label = label;
   } else {
-    // Tidak ada label → reverse geocode (dipakai untuk GPS / klik peta / drag marker)
+    // Reverse geocode — hanya untuk GPS / klik peta / drag marker
     try {
       const r = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&addressdetails=1&lat=${lat}&lon=${lng}`,
@@ -1284,9 +1294,11 @@ async function applyCoords(idx, lat, lng, label) {
   if (inp) inp.value = stops[idx].label;
   if (clr) clr.classList.add('show');
   placeMarker(idx, latlng);
-  map.setView([lat, lng], 15, { animate: true });
-  clearRoute();
-  showToast('Lokasi berhasil diisi ✓');
+
+  if (!silent) {
+    map.setView([lat, lng], 15, { animate: true });
+    showToast('Lokasi berhasil diisi ✓');
+  }
 }
 
 /* ── SIDEBAR MOBILE ── */
