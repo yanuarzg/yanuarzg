@@ -752,32 +752,135 @@ function sendWhatsApp() {
 }
 
 /* ── GOOGLE MAPS LINK RESOLVER ──────────────────────────────────────
-   Mendukung format:
-   • https://maps.app.goo.gl/xxxxx         (short link)
-   • https://maps.google.com/?q=lat,lng
-   • https://www.google.com/maps?q=lat,lng
+   Mendukung semua format Google Maps:
+   • https://maps.app.goo.gl/xxxxx          ← short link (perlu unshorten)
+   • https://www.google.com/maps/dir/lat,lng/...
    • https://www.google.com/maps/@lat,lng,...
    • https://www.google.com/maps/place/.../@lat,lng,...
-   Cara kerja short link (goo.gl/maps): browser tidak bisa follow redirect
-   lintas-origin, jadi kita pakai API allorigins.win sebagai proxy untuk
-   membaca Location header dari server Google.
+   • https://maps.google.com/?q=lat,lng
+   • https://www.google.com/maps?q=lat,lng
+
+   Strategi untuk short link (goo.gl): karena browser memblokir
+   fetch redirect lintas-origin, kita pakai beberapa proxy CORS
+   secara waterfall. Jika semua gagal, fallback ke pencarian
+   nama tempat via Nominatim dari teks URL.
 ──────────────────────────────────────────────────────────────────── */
 function isGoogleMapsUrl(str) {
   return /maps\.app\.goo\.gl|maps\.google\.com|google\.com\/maps/i.test(str.trim());
 }
 
+/**
+ * Ekstrak koordinat dari URL Google Maps panjang.
+ * Urutan prioritas pattern dari yang paling spesifik:
+ *  1. /dir/lat,lng/...       → koordinat titik asal rute
+ *  2. @lat,lng               → viewport center / destination
+ *  3. ?q=lat,lng             → query koordinat
+ *  4. ll=lat,lng             → legacy format
+ *  5. /place/.../lat,lng     → place detail
+ */
 function extractCoordsFromUrl(url) {
-  // Coba ekstrak langsung dari URL (tanpa redirect)
-  // Format: @lat,lng  atau  ?q=lat,lng  atau  /place/.../lat,lng
   const patterns = [
-    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /\/dir\/(-?\d+\.\d+),(-?\d+\.\d+)/,        // rute: titik pertama
+    /[?&/@](-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/, // generik presisi tinggi
     /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
     /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
   ];
   for (const p of patterns) {
     const m = url.match(p);
-    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    if (m) {
+      const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+      // sanity check: koordinat valid
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { lat, lng };
+      }
+    }
   }
+  return null;
+}
+
+/**
+ * Khusus URL /maps/dir/ — ekstrak SEMUA waypoint (koordinat maupun nama tempat).
+ * Contoh: /maps/dir/-6.35,106.74/Nama+Tempat/@viewport
+ * Mengembalikan array of { type: 'coords'|'name', lat?, lng?, name? }
+ */
+function extractDirWaypoints(url) {
+  const dirMatch = url.match(/\/maps\/dir\/(.+?)(?:\/@|$)/);
+  if (!dirMatch) return [];
+  const parts = dirMatch[1].split('/').filter(Boolean);
+  return parts.map(p => {
+    const coordMatch = p.match(/^(-?\d+\.\d+),(-?\d+\.\d+)$/);
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]), lng = parseFloat(coordMatch[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)
+        return { type: 'coords', lat, lng };
+    }
+    const name = decodeURIComponent(p.replace(/\+/g, ' ')).trim();
+    if (name.length > 1 && !/^\d/.test(name)) return { type: 'name', name };
+    return null;
+  }).filter(Boolean);
+}
+
+/**
+ * Ekstrak nama tempat dari URL Google Maps untuk fallback Nominatim.
+ * Contoh: /maps/place/Taman+Bermain+RW+12/...  → "Taman Bermain RW 12"
+ */
+function extractPlaceNameFromUrl(url) {
+  const m = url.match(/\/maps\/(?:place|search)\/([^/@?]+)/);
+  if (m) return decodeURIComponent(m[1].replace(/\+/g, ' '));
+  const q = url.match(/[?&]q=([^&@]+)/);
+  if (q) return decodeURIComponent(q[1].replace(/\+/g, ' '));
+  return null;
+}
+
+/**
+ * Unshorten URL goo.gl menggunakan beberapa proxy CORS.
+ * Semua proxy menggunakan GET biasa (bukan HEAD) karena lebih reliable.
+ * Mengembalikan URL panjang atau null jika semua gagal.
+ */
+async function unshortenUrl(shortUrl) {
+  const encoded = encodeURIComponent(shortUrl);
+
+  // Proxy #1: corsproxy.io — fetch halaman HTML lalu cari meta redirect
+  try {
+    const res = await fetch(`https://corsproxy.io/?${encoded}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      // Cari canonical URL atau og:url di HTML Google Maps
+      const canonical = text.match(/rel=.canonical. href=.([^"']+google\.com\/maps[^"']*)/)?.[1]
+                     || text.match(/"https:\/\/www\.google\.com\/maps\/[^"]+"/)?.[0]?.replace(/"/g,'');
+      if (canonical && isGoogleMapsUrl(canonical)) return canonical;
+      // Cari di script tag
+      const scriptCoords = text.match(/google\.com\/maps[^\s"'\\]*/)?.[0];
+      if (scriptCoords) return 'https://' + scriptCoords;
+    }
+  } catch { /* coba proxy berikutnya */ }
+
+  // Proxy #2: api.codetabs.com
+  try {
+    const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encoded}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      const m = text.match(/https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\]+/);
+      if (m) return m[0];
+    }
+  } catch { /* coba proxy berikutnya */ }
+
+  // Proxy #3: htmlpreview / thingproxy
+  try {
+    const res = await fetch(`https://thingproxy.freeboard.io/fetch/${encoded}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      const m = text.match(/https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\]+/);
+      if (m) return m[0];
+    }
+  } catch { /* semua gagal */ }
+
   return null;
 }
 
@@ -785,41 +888,76 @@ async function resolveGoogleMapsLink(idx, rawUrl) {
   const url = rawUrl.trim();
   showToast('Memproses link Google Maps…');
 
-  // 1. Coba ekstrak koordinat langsung dari URL
+  // ── Langkah 1: URL panjang dengan /dir/ → coba semua waypoint ──
+  if (/\/maps\/dir\//i.test(url)) {
+    const waypoints = extractDirWaypoints(url);
+    if (waypoints.length >= 1) {
+      const wp = waypoints[0]; // ambil titik pertama (asal rute)
+      if (wp.type === 'coords') {
+        await applyCoords(idx, wp.lat, wp.lng);
+        return;
+      }
+      if (wp.type === 'name') {
+        await resolveByName(idx, wp.name);
+        return;
+      }
+    }
+  }
+
+  // ── Langkah 2: Ekstrak koordinat langsung dari URL panjang ──
   const direct = extractCoordsFromUrl(url);
   if (direct) {
     await applyCoords(idx, direct.lat, direct.lng);
     return;
   }
 
-  // 2. Untuk short link (maps.app.goo.gl), resolve via proxy untuk dapat
-  //    URL panjang yang mengandung koordinat
+  // ── Langkah 3: Short link (goo.gl) → coba berbagai proxy CORS ──
+  const isShort = /maps\.app\.goo\.gl/i.test(url);
+  if (isShort) {
+    const longUrl = await unshortenUrl(url);
+    if (longUrl) {
+      // Coba dir waypoints dulu
+      if (/\/maps\/dir\//i.test(longUrl)) {
+        const wps = extractDirWaypoints(longUrl);
+        if (wps.length >= 1) {
+          if (wps[0].type === 'coords') { await applyCoords(idx, wps[0].lat, wps[0].lng); return; }
+          if (wps[0].type === 'name')   { await resolveByName(idx, wps[0].name); return; }
+        }
+      }
+      const coords = extractCoordsFromUrl(longUrl);
+      if (coords) { await applyCoords(idx, coords.lat, coords.lng); return; }
+      const pname = extractPlaceNameFromUrl(longUrl);
+      if (pname)  { await resolveByName(idx, pname); return; }
+    }
+
+    // Semua proxy gagal — tampilkan petunjuk manual
+    showToast('❌ Tidak bisa memproses short link. Buka dulu di browser, salin URL panjangnya.');
+    return;
+  }
+
+  // ── Langkah 4: Nama tempat di URL (non-dir, non-short) ──
+  const placeName = extractPlaceNameFromUrl(url);
+  if (placeName) { await resolveByName(idx, placeName); return; }
+
+  showToast('Format URL Google Maps tidak dikenali.');
+}
+
+/** Cari lokasi via Nominatim berdasarkan nama tempat */
+async function resolveByName(idx, name) {
+  showToast(`Mencari "${name}"…`);
   try {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res  = await fetch(proxyUrl);
-    const data = await res.json();
-
-    // allorigins mengembalikan final URL di data.status.url
-    const finalUrl = data?.status?.url || '';
-    const coords   = extractCoordsFromUrl(finalUrl);
-
-    if (coords) {
-      await applyCoords(idx, coords.lat, coords.lng);
-      return;
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1`,
+      { headers: { 'Accept-Language': 'id' } }
+    );
+    const d = await r.json();
+    if (d.length) {
+      await applyCoords(idx, parseFloat(d[0].lat), parseFloat(d[0].lon));
+    } else {
+      showToast('Lokasi tidak ditemukan. Coba ketik nama tempatnya secara manual.');
     }
-
-    // 3. Fallback: coba cari koordinat di dalam HTML respons
-    const html = data?.contents || '';
-    const m = html.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) ||
-              html.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (m) {
-      await applyCoords(idx, parseFloat(m[1]), parseFloat(m[2]));
-      return;
-    }
-
-    showToast('Koordinat tidak ditemukan dari link tersebut');
   } catch {
-    showToast('Gagal memproses link Google Maps');
+    showToast('Gagal mencari lokasi.');
   }
 }
 
