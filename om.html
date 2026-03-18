@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1:41 Kalkulator Jarak & Ongkir Kurir</title>
+  <title>1:54 Kalkulator Jarak & Ongkir Kurir</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -1146,8 +1146,11 @@ async function applyDirWaypoints(startIdx, url) {
   }
   renderStops(); // re-render dulu agar input/marker index sync
 
-  // Isi setiap waypoint secara paralel
-  const tasks = waypoints.map(async (wp, i) => {
+  // Isi setiap waypoint SECARA BERURUTAN (bukan concurrent).
+  // Nominatim membatasi request paralel dari IP yang sama → hasilnya bisa
+  // tertukar atau salah jika dikirim serentak via Promise.all.
+  for (let i = 0; i < waypoints.length; i++) {
+    const wp = waypoints[i];
     if (wp.type === 'coords') {
       await applyCoords(i, wp.lat, wp.lng);
       if (wp.source === 'viewport') {
@@ -1156,9 +1159,9 @@ async function applyDirWaypoints(startIdx, url) {
     } else {
       await resolveByName(i, wp.name);
     }
-  });
-
-  await Promise.all(tasks);
+    // Jeda 350ms antar request agar Nominatim tidak rate-limit
+    if (i < waypoints.length - 1) await sleep(350);
+  }
 
   // Fit peta ke semua marker yang baru dipasang
   const validLatLngs = stops.slice(0, waypoints.length)
@@ -1171,6 +1174,8 @@ async function applyDirWaypoints(startIdx, url) {
   clearRoute();
   showToast(`${waypoints.length} lokasi berhasil diisi dari Google Maps ✓`);
 }
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /** Cari lokasi via Nominatim berdasarkan nama tempat.
  *  Untuk nama panjang (dari URL dir), coba dengan nama lengkap dulu,
