@@ -1,786 +1,1111 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>KurirMap</title>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;font-family:'Roboto',sans-serif;background:#e8eaed;overflow:hidden;}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulator Jarak & Ongkir Kurir</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue:       #1a73e8;
+      --blue-dark:  #1557b0;
+      --blue-light: #e8f0fe;
+      --blue-mid:   #4285f4;
+      --red:        #ea4335;
+      --green:      #25d366;
+      --green-dark: #128c7e;
+      --white:      #ffffff;
+      --bg:         #f8f9fa;
+      --border:     #e0e0e0;
+      --text:       #202124;
+      --text-sub:   #5f6368;
+      --shadow-md:  0 4px 16px rgba(0,0,0,.13);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,.16);
+      --radius:     14px;
+      --font:       'Plus Jakarta Sans', sans-serif;
+      --sidebar-w:  390px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
 
-/* ── MAP FULLSCREEN ───────────────────────── */
-#map{position:fixed;inset:0;z-index:0;}
-.leaflet-control-zoom{border:none!important;box-shadow:0 1px 4px rgba(0,0,0,.3)!important;}
-.leaflet-control-zoom a{border-radius:2px!important;border:none!important;color:#444!important;font-size:18px!important;line-height:26px!important;}
+    #app { display: flex; height: 100dvh; position: relative; }
+    #map { flex: 1; height: 100%; z-index: 1; }
 
-/* ── PANEL (Google Maps left sidebar) ────── */
-#panel{
-  position:fixed;top:0;left:0;bottom:0;
-  width:408px;z-index:10;
-  display:flex;flex-direction:column;
-  pointer-events:none;
-}
+    /* ── SIDEBAR ── */
+    #sidebar {
+      position: absolute; top: 16px; left: 16px;
+      width: var(--sidebar-w); max-height: calc(100dvh - 32px);
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); z-index: 1000;
+      display: flex; flex-direction: column; overflow: hidden;
+      transition: transform .3s ease;
+    }
+    .sidebar-header {
+      padding: 16px 18px 13px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      background: var(--white); flex-shrink: 0;
+    }
+    .logo-icon {
+      width: 36px; height: 36px; background: var(--blue);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sidebar-header h1 { font-size: 15px; font-weight: 700; line-height: 1.2; }
+    .sidebar-header p  { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
 
-/* ── SEARCH CARD (top floating) ──────────── */
-#searchCard{
-  margin:10px 10px 0 10px;
-  background:#fff;
-  border-radius:8px;
-  box-shadow:0 2px 6px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.15);
-  pointer-events:all;
-  overflow:hidden;
-  flex-shrink:0;
-}
+    .sidebar-body { padding: 14px 14px 6px; overflow-y: auto; flex: 1; }
+    .sidebar-body::-webkit-scrollbar { width: 4px; }
+    .sidebar-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* LOGO ROW */
-.logo-row{
-  display:flex;align-items:center;gap:0;
-  padding:10px 14px 0 14px;
-}
-.logo-text{
-  font-family:'Google Sans',sans-serif;font-weight:700;
-  font-size:1.05rem;color:#1a73e8;letter-spacing:-.3px;
-}
-.logo-text span{color:#ea4335;}
+    .section-label {
+      font-size: 10.5px; font-weight: 700; color: var(--text-sub);
+      letter-spacing: .07em; text-transform: uppercase; margin-bottom: 10px;
+    }
 
-/* ROUTE INPUTS */
-.route-inputs{padding:8px 10px 8px 10px;display:flex;flex-direction:column;gap:0;}
-.input-row{display:flex;align-items:center;gap:8px;padding:2px 0;}
-.dot-line-wrap{display:flex;flex-direction:column;align-items:center;gap:0;flex-shrink:0;width:20px;}
-.route-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
-.route-dot-line{width:2px;height:18px;background:#dadce0;margin:1px 0;}
-.route-input{
-  flex:1;border:none;outline:none;
-  font-family:'Roboto',sans-serif;font-size:.875rem;color:#202124;
-  background:#f1f3f4;border-radius:8px;
-  padding:9px 12px;cursor:pointer;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:background .15s;
-}
-.route-input:hover{background:#e8eaed;}
-.route-input.active{background:#e8f0fe;color:#1a73e8;}
-.route-input.filled{background:#f1f3f4;color:#202124;}
-.route-input-placeholder{color:#80868b;}
-.input-action{flex-shrink:0;}
-.icon-btn{
-  width:32px;height:32px;border:none;background:transparent;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  border-radius:50%;color:#5f6368;transition:background .15s;
-}
-.icon-btn:hover{background:#f1f3f4;}
+    /* ── STOP ITEMS ── */
+    .stops-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
 
-/* ADD STOP ROW */
-.add-stop-row{
-  display:flex;align-items:center;gap:8px;
-  padding:4px 10px 10px 38px;
-}
-.add-stop-btn{
-  display:flex;align-items:center;gap:5px;
-  background:transparent;border:none;
-  color:#1a73e8;font-family:'Roboto',sans-serif;font-size:.8rem;font-weight:500;
-  cursor:pointer;padding:4px 8px;border-radius:4px;
-  transition:background .15s;
-}
-.add-stop-btn:hover{background:#e8f0fe;}
+    .stop-item {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 7px 9px; transition: border-color .2s, box-shadow .2s; position: relative;
+    }
+    .stop-item:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(26,115,232,.1);
+      background: var(--white);
+    }
 
-/* SEARCH AUTOCOMPLETE */
-#autocompleteDropdown{
-  display:none;border-top:1px solid #e8eaed;
-  max-height:280px;overflow-y:auto;
-}
-#autocompleteDropdown.show{display:block;}
-.ac-item{
-  display:flex;align-items:center;gap:12px;
-  padding:11px 16px;cursor:pointer;transition:background .12s;
-}
-.ac-item:hover{background:#f1f3f4;}
-.ac-icon{
-  width:36px;height:36px;border-radius:50%;
-  background:#e8eaed;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:#5f6368;
-}
-.ac-main{font-size:.875rem;color:#202124;font-weight:500;}
-.ac-sub{font-size:.76rem;color:#5f6368;margin-top:1px;}
-.ac-loading{display:none;padding:12px 16px;color:#5f6368;font-size:.82rem;align-items:center;gap:8px;}
-.ac-loading.show{display:flex;}
-.spinner{width:14px;height:14px;border:2px solid #dadce0;border-top-color:#1a73e8;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-@keyframes spin{to{transform:rotate(360deg);}}
+    .stop-pin {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 10px; font-weight: 700; color: var(--white);
+    }
+    .stop-pin.origin { background: var(--blue); }
+    .stop-pin.stop   { background: var(--blue-mid); }
+    .stop-pin.dest   { background: var(--red); }
 
-/* ── DIRECTIONS PANEL ────────────────────── */
-#directionsPanel{
-  margin:6px 10px 0 10px;
-  background:#fff;
-  border-radius:8px;
-  box-shadow:0 2px 6px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.15);
-  pointer-events:all;
-  overflow:hidden;
-  display:none;
-  flex-direction:column;
-}
-#directionsPanel.show{display:flex;}
+    /* input wrapper — holds input + clear button */
+    .ac-wrap { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
 
-/* TARIF BAR */
-.tarif-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;border-bottom:1px solid #e8eaed;
-  background:#f8f9fa;
-}
-.tarif-bar-label{font-size:.75rem;color:#5f6368;display:flex;align-items:center;gap:5px;}
-.tarif-input-wrap{
-  display:flex;align-items:center;gap:4px;
-  background:#fff;border:1px solid #dadce0;border-radius:6px;
-  padding:3px 8px;
-}
-.tarif-input-wrap span{font-size:.75rem;color:#5f6368;}
-.tarif-input-wrap input{
-  width:68px;border:none;outline:none;background:transparent;
-  font-family:'Roboto',sans-serif;font-size:.82rem;color:#202124;
-  text-align:right;padding:2px 0;
-}
+    .stop-input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: var(--font); font-size: 13px; color: var(--text);
+      padding-right: 22px; /* room for clear btn */
+      min-width: 0;
+    }
+    .stop-input::placeholder { color: #aaa; }
 
-/* RESULT SUMMARY */
-.result-summary{
-  display:flex;align-items:center;
-  padding:12px 16px;gap:0;
-}
-.res-item{flex:1;text-align:center;}
-.res-item+.res-item{border-left:1px solid #e8eaed;}
-.res-val{font-family:'Google Sans',sans-serif;font-size:1.35rem;font-weight:700;line-height:1.2;}
-.res-val.blue{color:#1a73e8;}
-.res-val.green{color:#137333;}
-.res-lbl{font-size:.7rem;color:#5f6368;margin-top:2px;}
+    /* ── CLEAR (×) BUTTON ── */
+    .btn-clear {
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; border-radius: 50%; border: none;
+      background: #c5c5c5; color: #fff; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      padding: 0; flex-shrink: 0; transition: background .15s;
+    }
+    .btn-clear.show { display: flex; }
+    .btn-clear:hover { background: #999; }
 
-/* VIA LABEL */
-.via-label{
-  padding:6px 16px 10px;
-  font-size:.76rem;color:#5f6368;
-  display:flex;align-items:center;gap:6px;
-}
+    /* autocomplete dropdown */
+    .ac-list {
+      position: absolute; top: calc(100% + 28px); left: -34px; right: -42px;
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-md); z-index: 9999; max-height: 200px; overflow-y: auto; display: none;
+    }
+    .ac-list.open { display: block; }
+    .ac-item {
+      display: flex; align-items: flex-start; gap: 9px; padding: 9px 13px;
+      cursor: pointer; font-size: 12.5px; color: var(--text);
+      border-bottom: 1px solid var(--border); transition: background .12s;
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover, .ac-item:focus { background: var(--blue-light); outline: none; }
+    .ac-icon { color: var(--text-sub); flex-shrink: 0; margin-top: 2px; }
+    .ac-main { font-weight: 600; display: block; }
+    .ac-sub  { font-size: 11px; color: var(--text-sub); display: block; }
 
-/* ROUTE CALC BTN */
-.btn-directions{
-  margin:0 16px 12px;
-  background:#1a73e8;color:#fff;border:none;border-radius:24px;
-  padding:10px 20px;font-family:'Google Sans',sans-serif;font-weight:500;font-size:.875rem;
-  cursor:pointer;transition:background .15s,box-shadow .15s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:0 1px 3px rgba(0,0,0,.2);
-}
-.btn-directions:hover{background:#1557b0;box-shadow:0 2px 6px rgba(0,0,0,.3);}
-.btn-directions:disabled{background:#dadce0;color:#80868b;cursor:not-allowed;box-shadow:none;}
+    /* icon buttons (GPS / delete) */
+    .btn-icon {
+      width: 28px; height: 28px; border-radius: 7px; border: none;
+      background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-sub); transition: background .15s, color .15s; flex-shrink: 0;
+    }
+    .btn-icon:hover { background: var(--blue-light); color: var(--blue); }
+    .btn-icon.danger:hover { background: #fce8e6; color: var(--red); }
 
-/* LEGS TABLE */
-.legs-section{border-top:1px solid #e8eaed;}
-.legs-toggle{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;cursor:pointer;user-select:none;
-  font-size:.8rem;color:#1a73e8;font-weight:500;
-}
-.legs-toggle:hover{background:#f1f3f4;}
-.legs-body{display:none;padding:0 0 4px;}
-.legs-body.open{display:block;}
-.leg-row{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 16px;border-top:1px solid #f1f3f4;
-}
-.leg-idx{
-  width:22px;height:22px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:.68rem;font-weight:700;color:#fff;flex-shrink:0;
-}
-.leg-info{flex:1;min-width:0;}
-.leg-route-text{font-size:.78rem;color:#5f6368;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.leg-km-text{font-size:.82rem;font-weight:500;color:#202124;}
-.leg-cost{font-size:.78rem;color:#137333;font-weight:500;margin-top:1px;}
+    .stop-connector { display: flex; align-items: center; justify-content: center; height: 10px; padding-left: 13px; }
 
-/* ── GPS BUTTON (floating, bottom right like GMaps) */
-#gpsBtn{
-  position:fixed;right:16px;bottom:100px;z-index:10;
-  width:40px;height:40px;border-radius:50%;
-  background:#fff;border:none;cursor:pointer;
-  box-shadow:0 2px 6px rgba(0,0,0,.3);
-  display:flex;align-items:center;justify-content:center;
-  color:#1a73e8;transition:box-shadow .15s;
-}
-#gpsBtn:hover{box-shadow:0 4px 10px rgba(0,0,0,.3);}
+    /* ── ACTION BUTTONS ── */
+    .btn-add {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px; border: 1.5px dashed var(--blue); background: var(--blue-light);
+      color: var(--blue); border-radius: 10px; font-family: var(--font);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .15s, border-style .15s; margin-bottom: 12px;
+    }
+    .btn-add:hover { background: #d2e3fc; border-style: solid; }
 
-/* ── RESET BUTTON (floating) */
-#resetBtn{
-  position:fixed;right:16px;bottom:52px;z-index:10;
-  background:#fff;border:1px solid #dadce0;border-radius:24px;
-  padding:8px 16px;font-family:'Google Sans',sans-serif;font-size:.8rem;
-  color:#5f6368;cursor:pointer;
-  box-shadow:0 1px 4px rgba(0,0,0,.2);
-  display:flex;align-items:center;gap:6px;
-  transition:box-shadow .15s,color .15s;
-}
-#resetBtn:hover{box-shadow:0 2px 8px rgba(0,0,0,.25);color:#202124;}
+    .btn-calc {
+      width: 100%; padding: 12px; background: var(--blue); color: var(--white);
+      border: none; border-radius: 10px; font-family: var(--font); font-size: 14px;
+      font-weight: 700; cursor: pointer; transition: background .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;
+    }
+    .btn-calc:hover { background: var(--blue-dark); }
+    .btn-calc:active { transform: scale(.98); }
 
-/* ── TOAST ────────────────────────────────── */
-#toast{
-  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
-  background:#323232;color:#fff;padding:10px 20px;border-radius:4px;
-  font-size:.82rem;z-index:9999;opacity:0;transition:opacity .3s;
-  pointer-events:none;white-space:nowrap;
-}
-#toast.show{opacity:1;}
+    .btn-reset {
+      width: 100%; padding: 9px; background: transparent; color: var(--text-sub);
+      border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--font);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: background .15s, color .15s; margin-bottom: 6px;
+    }
+    .btn-reset:hover { background: var(--bg); color: var(--text); }
 
-/* ── MAP CLICK HINT ──────────────────────── */
-#mapHint{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:rgba(0,0,0,.65);color:#fff;padding:10px 20px;border-radius:20px;
-  font-size:.82rem;z-index:5;display:none;pointer-events:none;
-  backdrop-filter:blur(4px);
-}
+    /* ── RESULT CARD ── */
+    #result-card {
+      margin: 0 14px 10px;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      border-radius: 12px; padding: 14px 16px; color: var(--white);
+      display: none; flex-shrink: 0;
+    }
+    #result-card.visible { display: block; }
+    .result-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .result-row + .result-row { margin-top: 11px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,.2); }
+    .result-label { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+    .result-value { font-size: 20px; font-weight: 700; text-align: right; }
+    .result-value.big { font-size: 22px; }
+    .result-note { font-size: 10px; opacity: .7; text-align: right; margin-top: 2px; }
 
-/* POPUP CUSTOM */
-.leaflet-popup-content-wrapper{border-radius:8px!important;box-shadow:0 2px 10px rgba(0,0,0,.25)!important;font-family:'Roboto',sans-serif!important;font-size:.8rem!important;padding:0!important;}
-.leaflet-popup-content{margin:10px 14px!important;}
+    /* ── WHATSAPP BUTTON ── */
+    .btn-wa {
+      display: none; width: calc(100% - 28px); margin: 0 14px 14px;
+      padding: 12px; background: var(--green); color: var(--white);
+      border: none; border-radius: 10px; font-family: var(--font);
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: background .2s, transform .1s;
+      align-items: center; justify-content: center; gap: 8px; flex-shrink: 0;
+    }
+    .btn-wa.visible { display: flex; }
+    .btn-wa:hover { background: var(--green-dark); }
+    .btn-wa:active { transform: scale(.98); }
 
-@media(max-width:600px){
-  #panel{width:100%;bottom:auto;}
-  #directionsPanel{max-height:45vh;overflow-y:auto;}
-  #gpsBtn,#resetBtn{display:none;}
-}
-</style>
+    /* WA modal CSS dihapus — nomor sudah hardcode, tidak perlu modal */
+
+    /* ── LOADING / TOAST ── */
+    #loading-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,.55); z-index: 9998;
+      align-items: center; justify-content: center;
+    }
+    #loading-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px; border: 4px solid var(--border);
+      border-top-color: var(--blue); border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: #303134; color: var(--white);
+      padding: 10px 20px; border-radius: 8px; font-size: 13px;
+      z-index: 9999; transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── MOBILE ── */
+    #toggle-sidebar {
+      display: none; position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%); z-index: 1001;
+      background: var(--blue); color: var(--white); border: none;
+      border-radius: 50px; padding: 12px 24px; font-family: var(--font);
+      font-size: 14px; font-weight: 600; box-shadow: var(--shadow-lg); cursor: pointer;
+      gap: 8px; align-items: center;
+    }
+    @media (max-width: 600px) {
+      :root { --sidebar-w: calc(100vw - 24px); }
+      #sidebar {
+        top: auto; bottom: 80px; left: 12px; right: 12px; width: auto;
+        max-height: 70dvh; transform: translateY(calc(100% + 100px));
+      }
+      #sidebar.open { transform: translateY(0); }
+      #toggle-sidebar { display: flex; }
+    }
+  </style>
 </head>
 <body>
+<div id="app">
+  <div id="map"></div>
 
-<!-- MAP -->
-<div id="map"></div>
-
-<!-- MAP HINT -->
-<div id="mapHint">Klik peta untuk menentukan lokasi</div>
-
-<!-- PANEL -->
-<div id="panel">
-
-  <!-- SEARCH CARD -->
-  <div id="searchCard">
-    <div class="logo-row">
-      <svg width="20" height="20" viewBox="0 0 40 30" fill="none" style="margin-right:6px">
-        <rect x="1" y="7" width="25" height="15" rx="2.5" fill="#1a73e8"/>
-        <path d="M26 11h7l4 6v5h-11V11z" fill="#1557b0"/>
-        <circle cx="8" cy="24" r="3.2" fill="#202124"/>
-        <circle cx="8" cy="24" r="1.4" fill="#e8eaed"/>
-        <circle cx="30" cy="24" r="3.2" fill="#202124"/>
-        <circle cx="30" cy="24" r="1.4" fill="#e8eaed"/>
-      </svg>
-      <span class="logo-text">Kurir<span>Map</span></span>
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13" rx="1"/>
+          <path d="M16 8h4l3 5v4h-7V8z"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Kalkulator Ongkir</h1>
+        <p>Hitung jarak &amp; biaya pengiriman</p>
+      </div>
     </div>
 
-    <!-- ROUTE INPUTS -->
-    <div class="route-inputs" id="routeInputs"></div>
+    <div class="sidebar-body" id="sidebar-body">
+      <div class="section-label">Rute Pengiriman</div>
+      <div class="stops-list" id="stops-list"></div>
 
-    <!-- ADD STOP -->
-    <div class="add-stop-row">
-      <button class="add-stop-btn" onclick="addStop()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        Tambah tujuan
+      <button class="btn-add" onclick="addStop()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Tambah Lokasi
       </button>
+      <button class="btn-calc" onclick="calculateRoute()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Hitung Rute &amp; Ongkir
+      </button>
+      <button class="btn-reset" onclick="resetAll()">Reset Semua</button>
     </div>
 
-    <!-- AUTOCOMPLETE -->
-    <div id="autocompleteDropdown">
-      <div class="ac-loading" id="acLoading">
-        <div class="spinner"></div> Mencari lokasi...
+    <!-- Result card -->
+    <div id="result-card">
+      <div class="result-row">
+        <div>
+          <div class="result-label">Total Jarak</div>
+          <div class="result-value" id="res-distance">—</div>
+        </div>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.5" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </div>
-    </div>
-  </div>
-
-  <!-- DIRECTIONS RESULT PANEL -->
-  <div id="directionsPanel">
-    <!-- TARIF -->
-    <div class="tarif-bar">
-      <div class="tarif-bar-label">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 010 3H10.5a1.5 1.5 0 000 3H15"/></svg>
-        Tarif pengiriman
-      </div>
-      <div class="tarif-input-wrap">
-        <span>Rp</span>
-        <input type="number" id="tarifInput" value="3000" min="0" step="500" oninput="updateTarif()"/>
-        <span>/km</span>
-      </div>
-    </div>
-
-    <!-- RESULT SUMMARY -->
-    <div class="result-summary">
-      <div class="res-item">
-        <div class="res-val blue" id="resKm">—</div>
-        <div class="res-lbl">Total jarak</div>
-      </div>
-      <div class="res-item">
-        <div class="res-val green" id="resBiaya">—</div>
-        <div class="res-lbl">Estimasi biaya</div>
+      <div class="result-row">
+        <div>
+          <div class="result-label">Total Ongkir</div>
+          <div class="result-value big" id="res-cost">—</div>
+          <div class="result-note" id="res-note">—</div>
+        </div>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9 12h6M12 9v6"/></svg>
       </div>
     </div>
 
-    <!-- VIA -->
-    <div class="via-label" id="viaLabel">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6l6 6-6 6"/></svg>
-      Via jalur terpendek
-    </div>
-
-    <!-- HITUNG BTN -->
-    <button class="btn-directions" id="calcBtn" onclick="calculate()" disabled>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      Cari Rute &amp; Hitung Biaya
+    <!-- WhatsApp button (muncul setelah kalkulasi berhasil) -->
+    <button class="btn-wa" id="btn-wa" onclick="openWaModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.115 1.527 5.843L.057 23.428a.75.75 0 0 0 .918.93l5.656-1.478A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.13-1.424l-.368-.217-3.792.991.996-3.7-.24-.382A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+      </svg>
+      Kirim Order via WhatsApp
     </button>
-
-    <!-- LEGS -->
-    <div class="legs-section" id="legsSection" style="display:none">
-      <div class="legs-toggle" onclick="toggleLegs()">
-        <span id="legsToggleLabel">Detail per segmen</span>
-        <svg id="legsChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-      <div class="legs-body" id="legsBody"></div>
-    </div>
   </div>
 
+  <button id="toggle-sidebar" onclick="toggleSidebar()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    Buka Panel
+  </button>
 </div>
 
-<!-- FLOATING GPS -->
-<button id="gpsBtn" title="Gunakan lokasi saya" onclick="useMyLocation()">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-    <path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5"/>
-  </svg>
-</button>
+<!-- No WA modal needed — nomor sudah di-set di CONFIG.WA_NUMBER -->
 
-<!-- FLOATING RESET -->
-<button id="resetBtn" onclick="resetAll()">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 109-9H3"/><path d="M3 3v6h6"/></svg>
-  Reset
-</button>
-
-<!-- TOAST -->
+<div id="loading-overlay"><div class="spinner"></div></div>
 <div id="toast"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ────────────────────────────────────────────────────
-// CONSTANTS
-// ────────────────────────────────────────────────────
-const ROUTE_COLORS = ['#1a73e8','#ea4335','#34a853','#fbbc04','#9c27b0','#00bcd4'];
-const STOP_COLORS  = ['#ea4335','#1a73e8','#34a853','#fbbc04','#9c27b0','#ff5722'];
-const TARIF        = () => parseFloat(document.getElementById('tarifInput').value) || 3000;
+/* ================================================================
+   ⚙️  KONFIGURASI TARIF — UBAH DI SINI JIKA HARGA BERUBAH
+================================================================ */
+const CONFIG = {
+  /**
+   * Tarif biaya per kilometer (Rp)
+   * Saat ini: Rp 3.000 / km
+   * Ubah angka di bawah jika tarif berubah.
+   * Contoh tarif baru Rp 3.500/km → tulis: 3500
+   */
+  RATE_PER_KM: 3000,
 
-// ────────────────────────────────────────────────────
-// STATE
-// ────────────────────────────────────────────────────
-let stops      = [];   // {lat,lng,address,marker}
-let stopCnt    = 0;
-let routeLayers= [];
-let activeIdx  = null; // which stop is being edited
-let sTimeout   = null;
-let legsOpen   = false;
+  /**
+   * Biaya minimum (Rp).
+   * Jika total ongkir lebih kecil dari nilai ini, nilai ini yang dipakai.
+   * Set ke 0 untuk menonaktifkan biaya minimum.
+   */
+  MIN_COST: 5000,
 
-// ────────────────────────────────────────────────────
-// MAP
-// ────────────────────────────────────────────────────
-const map = L.map('map', { zoomControl: false }).setView([-6.2, 106.8], 12);
+  /**
+   * Nomor WhatsApp tujuan (kurir/penerima) — sudah di-set permanen.
+   * Ubah jika nomor berubah.
+   */
+  WA_NUMBER: '6289507785333',
+};
+/* ================================================================ */
+
+/* ── INIT PETA ── */
+const map = L.map('map', { center: [-6.2088, 106.8456], zoom: 12, zoomControl: false });
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 19,
 }).addTo(map);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-map.on('click', e => {
-  if (activeIdx === null) return;
-  const { lat, lng } = e.latlng;
-  placeStop(activeIdx, lat, lng, `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-  reverseGeocode(lat, lng, activeIdx);
-  closeAutocomplete();
-  document.getElementById('mapHint').style.display = 'none';
-});
+/* ── STATE ── */
+let stops = [];
+let markers = [];
+let routeLayer = null;
+let stopIdCounter = 0;
+let activeInputIndex = null;
+let lastDistance = 0;
+let lastCost = 0;
 
-// ────────────────────────────────────────────────────
-// MARKER
-// ────────────────────────────────────────────────────
-function makeIcon(i) {
-  const c = STOP_COLORS[i % STOP_COLORS.length];
-  const lbl = String.fromCharCode(65 + i);
-  return L.divIcon({
-    className: '',
-    html: `<div style="position:relative;width:30px;height:42px;">
-      <svg viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg" width="30" height="42">
-        <path d="M15 0C6.7 0 0 6.7 0 15c0 10 15 27 15 27s15-17 15-27C30 6.7 23.3 0 15 0z" fill="${c}" stroke="rgba(0,0,0,.15)" stroke-width="1"/>
-        <circle cx="15" cy="15" r="8" fill="rgba(255,255,255,.9)"/>
-        <text x="15" y="19" text-anchor="middle" font-size="9" font-weight="700" fill="${c}" font-family="Google Sans,sans-serif">${lbl}</text>
-      </svg>
-    </div>`,
-    iconSize: [30, 42], iconAnchor: [15, 42]
-  });
-}
+const COLORS = { origin: '#1a73e8', stop: '#4285f4', dest: '#ea4335' };
 
-// ────────────────────────────────────────────────────
-// STOP MANAGEMENT
-// ────────────────────────────────────────────────────
-function addStop() {
-  stops.push({ lat: null, lng: null, address: null, marker: null });
-  renderInputs();
-  openInput(stops.length - 1);
-  checkReady();
-}
+/* ── HELPERS ── */
+function fmtRp(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
+function esc(s)   { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escQ(s)  { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
 
-function removeStop(i) {
-  if (stops.length <= 2) { showToast('Minimal 2 titik diperlukan'); return; }
-  if (stops[i].marker) map.removeLayer(stops[i].marker);
-  stops.splice(i, 1);
-  stops.forEach((s, j) => { if (s.marker) s.marker.setIcon(makeIcon(j)); });
-  clearRoutes();
-  resetResult();
-  renderInputs();
-  checkReady();
-}
+/* ── RENDER ── */
+function renderStops() {
+  const list = document.getElementById('stops-list');
+  list.innerHTML = '';
+  const total = stops.length;
 
-function placeStop(i, lat, lng, label) {
-  const s = stops[i];
-  s.lat = lat; s.lng = lng; s.address = label;
-  if (s.marker) map.removeLayer(s.marker);
-  s.marker = L.marker([lat, lng], { icon: makeIcon(i), draggable: true })
-    .addTo(map)
-    .bindPopup(`<b>${stopLbl(i)}</b><br/><span style="color:#5f6368;font-size:.75rem">${label.substring(0, 55)}</span>`);
-  s.marker.on('dragend', e => {
-    const { lat, lng } = e.target.getLatLng();
-    s.lat = lat; s.lng = lng;
-    reverseGeocode(lat, lng, i);
-    resetResult();
-    checkReady();
-  });
-  renderInputs();
-  checkReady();
-  fitAll();
-}
+  stops.forEach((stop, i) => {
+    const isFirst = i === 0, isLast = i === total - 1, canDel = total > 2;
+    const pinClass  = isFirst ? 'origin' : isLast ? 'dest' : 'stop';
+    const pinLetter = isFirst ? 'A' : isLast ? String.fromCharCode(64 + total) : String.fromCharCode(65 + i);
+    const ph = isFirst ? 'Cari lokasi atau paste link Google Maps...' : isLast ? 'Cari tujuan atau paste link Google Maps...' : `Titik pemberhentian ${i}...`;
+    const hasVal = !!(stop.label);
 
-function stopLbl(i) {
-  if (i === 0) return 'Lokasi asal';
-  if (i === stops.length - 1 && stops.length === 2) return 'Tujuan';
-  return `Tujuan ${i}`;
-}
-
-function fitAll() {
-  const pts = stops.filter(s => s.lat).map(s => [s.lat, s.lng]);
-  if (pts.length >= 2) map.fitBounds(pts, { padding: [80, 450] });
-  else if (pts.length === 1) map.setView(pts[0], 15);
-}
-
-function clearRoutes() { routeLayers.forEach(l => map.removeLayer(l)); routeLayers = []; }
-function checkReady() {
-  const ok = stops.length >= 2 && stops.every(s => s.lat !== null);
-  document.getElementById('calcBtn').disabled = !ok;
-}
-
-// ────────────────────────────────────────────────────
-// RENDER INPUT ROWS
-// ────────────────────────────────────────────────────
-function renderInputs() {
-  const wrap = document.getElementById('routeInputs');
-  let html = '';
-  stops.forEach((s, i) => {
-    const c     = STOP_COLORS[i % STOP_COLORS.length];
-    const isLast= i === stops.length - 1;
-    const filled= !!s.address;
-    const lbl   = filled ? s.address.split(',')[0].substring(0, 45) : stopLbl(i);
-    const cls   = filled ? 'route-input filled' : 'route-input';
-    const pClass= filled ? '' : 'route-input-placeholder';
-    const canDel= stops.length > 2;
-
-    html += `<div class="input-row">
-      <div class="dot-line-wrap">
-        ${i < stops.length - 1
-          ? `<div class="route-dot" style="background:${c}"></div>
-             <div class="route-dot-line"></div>`
-          : `<!-- SVG pin for last stop -->
-             <svg width="14" height="18" viewBox="0 0 14 18" fill="none">
-               <path d="M7 0C3.1 0 0 3.1 0 7c0 5 7 11 7 11s7-6 7-11C14 3.1 10.9 0 7 0z" fill="${c}"/>
-               <circle cx="7" cy="7" r="2.5" fill="rgba(255,255,255,.9)"/>
-             </svg>`
-        }
-      </div>
-      <div class="${cls} ${pClass}" onclick="openInput(${i})" title="${s.address||''}">
-        ${lbl}
-      </div>
-      ${canDel ? `<button class="icon-btn" onclick="removeStop(${i})" title="Hapus titik">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>` : `<div style="width:32px"></div>`}
-    </div>`;
-  });
-  wrap.innerHTML = html;
-}
-
-// ────────────────────────────────────────────────────
-// ACTIVE INPUT / AUTOCOMPLETE
-// ────────────────────────────────────────────────────
-function openInput(i) {
-  activeIdx = i;
-  // Highlight
-  document.querySelectorAll('.route-input').forEach((el, j) => {
-    el.classList.toggle('active', j === i);
-  });
-  // Show autocomplete area with a real input
-  const drop = document.getElementById('autocompleteDropdown');
-  drop.classList.add('show');
-  drop.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #e8eaed;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="liveInput" placeholder="Cari nama tempat atau alamat..."
-        style="flex:1;border:none;outline:none;font-size:.875rem;font-family:'Roboto',sans-serif;color:#202124;"
-        oninput="onType(this.value)" onkeydown="if(event.key==='Escape')closeAutocomplete()" autofocus/>
-      <button onclick="closeAutocomplete()" style="background:none;border:none;cursor:pointer;color:#5f6368;display:flex;padding:2px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="ac-loading" id="acLoading" style="display:none;padding:12px 16px;"><div class="spinner"></div>&nbsp;Mencari...</div>
-    <div id="acResults"></div>
-    <div onclick="activateMapClick()" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-top:1px solid #e8eaed;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background=''">
-      <div class="ac-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-      </div>
-      <div>
-        <div style="font-size:.875rem;color:#1a73e8;font-weight:500;">Pilih dari peta</div>
-        <div style="font-size:.76rem;color:#5f6368;">Klik langsung pada peta</div>
-      </div>
-    </div>`;
-  setTimeout(()=>document.getElementById('liveInput')?.focus(), 50);
-}
-
-function closeAutocomplete() {
-  activeIdx = null;
-  document.getElementById('autocompleteDropdown').classList.remove('show');
-  document.getElementById('autocompleteDropdown').innerHTML = '';
-  document.querySelectorAll('.route-input').forEach(el => el.classList.remove('active'));
-}
-
-function activateMapClick() {
-  document.getElementById('mapHint').style.display = 'block';
-  document.getElementById('autocompleteDropdown').classList.remove('show');
-  showToast('Klik pada peta untuk menentukan lokasi');
-}
-
-// ────────────────────────────────────────────────────
-// SEARCH / NOMINATIM
-// ────────────────────────────────────────────────────
-function onType(v) {
-  clearTimeout(sTimeout);
-  const res = document.getElementById('acResults');
-  if (!res) return;
-  if (v.length < 2) { res.innerHTML = ''; return; }
-  sTimeout = setTimeout(() => fetchSug(v), 380);
-}
-
-async function fetchSug(q) {
-  const loadEl = document.getElementById('acLoading');
-  const resEl  = document.getElementById('acResults');
-  if (!loadEl || !resEl) return;
-  loadEl.style.display = 'flex';
-  try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`,
-      { headers: { 'Accept-Language': 'id' } }
-    );
-    const data = await r.json();
-    resEl.innerHTML = data.map(r => `
-      <div class="ac-item" onclick="pickSug(${r.lat},${r.lon},'${esc(r.display_name)}')">
-        <div class="ac-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round">
-            <path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5"/>
+    const div = document.createElement('div');
+    div.className = 'stop-item';
+    div.innerHTML = `
+      <div class="stop-pin ${pinClass}">${pinLetter}</div>
+      <div class="ac-wrap">
+        <input class="stop-input" id="inp-${i}" placeholder="${ph}"
+          value="${esc(stop.label || '')}" autocomplete="off" />
+        <button class="btn-clear${hasVal ? ' show' : ''}" id="clr-${i}" title="Hapus isian">
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/>
           </svg>
-        </div>
-        <div>
-          <div class="ac-main">${esc(r.name || r.display_name.split(',')[0])}</div>
-          <div class="ac-sub">${esc(r.display_name)}</div>
-        </div>
-      </div>`).join('') || `<div style="padding:12px 16px;font-size:.82rem;color:#5f6368;">Lokasi tidak ditemukan</div>`;
-  } catch { }
-  if (loadEl) loadEl.style.display = 'none';
-}
+        </button>
+        <div class="ac-list" id="ac-${i}"></div>
+      </div>
+      <button class="btn-icon" title="Gunakan GPS saya" onclick="useGPS(${i})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        </svg>
+      </button>
+      ${canDel ? `
+      <button class="btn-icon danger" title="Hapus titik ini" onclick="removeStop(${i})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+        </svg>
+      </button>` : ''}
+    `;
+    list.appendChild(div);
 
-function pickSug(lat, lng, label) {
-  if (activeIdx === null) return;
-  placeStop(activeIdx, parseFloat(lat), parseFloat(lng), label);
-  closeAutocomplete();
-  document.getElementById('mapHint').style.display = 'none';
-}
-
-async function reverseGeocode(lat, lng, i) {
-  try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { 'Accept-Language': 'id' } }
-    );
-    const d = await r.json();
-    if (d.display_name && stops[i]) { stops[i].address = d.display_name; renderInputs(); }
-  } catch { }
-}
-
-function useMyLocation() {
-  if (!navigator.geolocation) { showToast('GPS tidak tersedia di browser ini'); return; }
-  showToast('Mencari lokasi GPS...');
-  navigator.geolocation.getCurrentPosition(p => {
-    if (activeIdx === null) {
-      // default: set first unfilled stop
-      const fi = stops.findIndex(s => !s.lat);
-      if (fi !== -1) activeIdx = fi; else activeIdx = 0;
+    if (i < total - 1) {
+      const c = document.createElement('div');
+      c.className = 'stop-connector';
+      c.innerHTML = `<svg width="2" height="10" viewBox="0 0 2 10"><line x1="1" y1="0" x2="1" y2="10" stroke="#ccc" stroke-width="2" stroke-dasharray="3 2"/></svg>`;
+      list.appendChild(c);
     }
-    const { latitude: lat, longitude: lng } = p.coords;
-    placeStop(activeIdx, lat, lng, `Lokasi Saya`);
-    reverseGeocode(lat, lng, activeIdx);
-    map.setView([lat, lng], 15);
-    closeAutocomplete();
-  }, () => showToast('Tidak dapat mengakses GPS'));
-}
+  });
 
-function esc(s) {
-  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+  // listeners
+  stops.forEach((_, i) => {
+    const inp = document.getElementById(`inp-${i}`);
+    const clr = document.getElementById(`clr-${i}`);
+    if (!inp) return;
 
-// ────────────────────────────────────────────────────
-// CALCULATE
-// ────────────────────────────────────────────────────
-async function calculate() {
-  if (stops.length < 2 || !stops.every(s => s.lat)) return;
-  const btn = document.getElementById('calcBtn');
-  btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div>&nbsp;Menghitung rute...`;
-  clearRoutes();
+    inp.addEventListener('focus', () => { activeInputIndex = i; });
+    inp.addEventListener('blur',  () => setTimeout(() => closeAC(i), 150));
+    inp.addEventListener('input', () => onInput(i));
 
-  let totalKm = 0;
-  const legs = [];
-  try {
-    for (let i = 0; i < stops.length - 1; i++) {
-      const a = stops[i], b = stops[i + 1];
-      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
-      const res = await fetch(url);
-      const d   = await res.json();
-      if (d.code !== 'Ok' || !d.routes?.length) {
-        showToast(`Rute ${String.fromCharCode(65+i)}→${String.fromCharCode(66+i)} tidak ditemukan`);
-        return;
+    // Deteksi paste Google Maps URL secara instan
+    inp.addEventListener('paste', e => {
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+      if (isGoogleMapsUrl(pasted)) {
+        e.preventDefault();
+        inp.value = pasted;
+        const clr = document.getElementById(`clr-${i}`);
+        if (clr) clr.classList.add('show');
+        resolveGoogleMapsLink(i, pasted);
       }
-      const route = d.routes[0];
-      const km    = route.distance / 1000;
-      totalKm    += km;
-      const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
+    });
 
-      // Blue main route line like Google Maps
-      const shadow = L.polyline(latlngs, { color: '#fff', weight: 9, opacity: .6 }).addTo(map);
-      const line   = L.polyline(latlngs, { color: ROUTE_COLORS[i % ROUTE_COLORS.length], weight: 6, opacity: .9 }).addTo(map);
-      routeLayers.push(shadow, line);
-
-      legs.push({
-        from:  a.address || `Titik ${String.fromCharCode(65+i)}`,
-        to:    b.address || `Titik ${String.fromCharCode(66+i)}`,
-        km,
-        color: ROUTE_COLORS[i % ROUTE_COLORS.length]
+    // FIX #2: tombol clear menggunakan mousedown + preventDefault
+    // agar blur dari input tidak terjadi lebih dulu sebelum clear diproses
+    if (clr) {
+      clr.addEventListener('mousedown', e => {
+        e.preventDefault();
+        doClear(i);
+      });
+      // support touch
+      clr.addEventListener('touchend', e => {
+        e.preventDefault();
+        doClear(i);
       });
     }
+  });
+}
 
-    const tarif  = TARIF();
-    const biaya  = totalKm * tarif;
-    const fmtRp  = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+function doClear(i) {
+  if (markers[i]) { map.removeLayer(markers[i]); markers[i] = null; }
+  stops[i].latlng = null;
+  stops[i].label  = '';
+  const inp = document.getElementById(`inp-${i}`);
+  const clr = document.getElementById(`clr-${i}`);
+  if (inp) { inp.value = ''; inp.focus(); }
+  if (clr) clr.classList.remove('show');
+  closeAC(i);
+  clearRoute();
+}
 
-    document.getElementById('resKm').textContent    = totalKm.toFixed(1) + ' km';
-    document.getElementById('resBiaya').textContent = fmtRp(biaya);
+/* ── ADD / REMOVE ── */
+function addStop() {
+  stops.push({ id: stopIdCounter++, latlng: null, label: '' });
+  renderStops();
+  clearRoute();
+  setTimeout(() => { const b = document.getElementById('sidebar-body'); b.scrollTop = b.scrollHeight; }, 60);
+}
 
-    // Via label
-    const mid = stops[0].address ? stops[0].address.split(',')[0].substring(0, 22) : 'Asal';
-    document.getElementById('viaLabel').innerHTML = `
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6l6 6-6 6"/></svg>
-      ${totalKm.toFixed(1)} km · Rp${Math.round(biaya).toLocaleString('id-ID')}`;
+function removeStop(idx) {
+  if (stops.length <= 2) return;
+  if (markers[idx]) { map.removeLayer(markers[idx]); }
+  markers.splice(idx, 1);
+  stops.splice(idx, 1);
+  renderStops();
+  clearRoute();
+}
 
-    // Legs
-    if (legs.length > 1) {
-      document.getElementById('legsBody').innerHTML = legs.map((l, i) => {
-        const fa = l.from.split(',')[0].substring(0, 22);
-        const fb = l.to.split(',')[0].substring(0, 22);
-        return `<div class="leg-row">
-          <div class="leg-idx" style="background:${l.color}">${String.fromCharCode(65+i)}</div>
-          <div class="leg-info">
-            <div class="leg-route-text">${fa} → ${fb}</div>
-            <div style="display:flex;gap:12px;margin-top:2px;">
-              <span class="leg-km-text">${l.km.toFixed(1)} km</span>
-              <span class="leg-cost">${fmtRp(l.km * tarif)}</span>
-            </div>
-          </div>
-        </div>`;
-      }).join('');
-      document.getElementById('legsSection').style.display = 'block';
-    } else {
-      document.getElementById('legsSection').style.display = 'none';
+/* ── AUTOCOMPLETE ── */
+let acTimers = {};
+
+function onInput(i) {
+  const inp = document.getElementById(`inp-${i}`);
+  const val = inp ? inp.value : '';
+  stops[i].label = val;
+
+  // toggle clear button
+  const clr = document.getElementById(`clr-${i}`);
+  if (clr) clr.classList.toggle('show', val.length > 0);
+
+  if (!val) {
+    if (markers[i]) { map.removeLayer(markers[i]); markers[i] = null; }
+    stops[i].latlng = null;
+    closeAC(i);
+    return;
+  }
+
+  // ── Deteksi Google Maps URL yang di-paste / diketik ──
+  if (isGoogleMapsUrl(val)) {
+    closeAC(i);
+    resolveGoogleMapsLink(i, val);
+    return;
+  }
+
+  if (val.trim().length < 3) { closeAC(i); return; }
+
+  clearTimeout(acTimers[i]);
+  acTimers[i] = setTimeout(async () => {
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val.trim())}&limit=6&addressdetails=1`,
+        { headers: { 'Accept-Language': 'id' } }
+      );
+      showAC(i, await r.json());
+    } catch { closeAC(i); }
+  }, 380);
+}
+
+function showAC(idx, results) {
+  const box = document.getElementById(`ac-${idx}`);
+  if (!box || !results.length) { closeAC(idx); return; }
+
+  box.innerHTML = results.map(r => {
+    const main = r.namedetails?.name || r.display_name.split(',')[0];
+    const sub  = r.display_name.length > 60 ? r.display_name.substring(0, 60) + '…' : r.display_name;
+    // FIX #1: gunakan onmousedown + e.preventDefault() agar blur tidak menutup list
+    // sebelum nilai sempat disimpan ke state
+    return `<div class="ac-item"
+      onmousedown="handleAcSelect(event, ${idx}, ${r.lat}, ${r.lon}, '${escQ(r.display_name)}')"
+      ontouchend="handleAcSelect(event, ${idx}, ${r.lat}, ${r.lon}, '${escQ(r.display_name)}')">
+      <span class="ac-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </span>
+      <span>
+        <span class="ac-main">${esc(main)}</span>
+        <span class="ac-sub">${esc(sub)}</span>
+      </span>
+    </div>`;
+  }).join('');
+
+  box.classList.add('open');
+}
+
+/* ── FIX #1: pakai mousedown/touchend + preventDefault ── */
+function handleAcSelect(e, idx, lat, lng, name) {
+  e.preventDefault(); // cegah blur dari input sebelum data tersimpan
+  selectPlace(idx, parseFloat(lat), parseFloat(lng), name);
+}
+
+function selectPlace(idx, lat, lng, name) {
+  const latlng = { lat, lng };
+  stops[idx].latlng = latlng;
+  stops[idx].label  = name;
+
+  const inp = document.getElementById(`inp-${idx}`);
+  const clr = document.getElementById(`clr-${idx}`);
+  if (inp) inp.value = name;
+  if (clr) clr.classList.add('show');
+
+  closeAC(idx);
+  placeMarker(idx, latlng);
+  map.setView([lat, lng], 14, { animate: true });
+  clearRoute();
+  showToast('Lokasi dipilih ✓');
+}
+
+function closeAC(i) {
+  const b = document.getElementById(`ac-${i}`);
+  if (b) { b.innerHTML = ''; b.classList.remove('open'); }
+}
+
+/* ── GPS ── */
+function useGPS(idx) {
+  if (!navigator.geolocation) { showToast('Browser tidak mendukung GPS'); return; }
+  showToast('Mengambil lokasi GPS…');
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    stops[idx].latlng = latlng;
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`, { headers: { 'Accept-Language': 'id' } });
+      const d = await r.json();
+      stops[idx].label = d.display_name || `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+    } catch { stops[idx].label = `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`; }
+    const inp = document.getElementById(`inp-${idx}`);
+    const clr = document.getElementById(`clr-${idx}`);
+    if (inp) inp.value = stops[idx].label;
+    if (clr) clr.classList.add('show');
+    placeMarker(idx, latlng);
+    map.setView([latlng.lat, latlng.lng], 15, { animate: true });
+    clearRoute();
+    showToast('Lokasi GPS berhasil ✓');
+  }, () => showToast('Gagal mendapatkan lokasi GPS'));
+}
+
+/* ── KLIK PETA ── */
+map.on('click', async e => {
+  const idx = activeInputIndex;
+  if (idx === null || idx === undefined || idx >= stops.length) return;
+  const latlng = { lat: e.latlng.lat, lng: e.latlng.lng };
+  stops[idx].latlng = latlng;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`, { headers: { 'Accept-Language': 'id' } });
+    const d = await r.json();
+    stops[idx].label = d.display_name || `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+  } catch { stops[idx].label = `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`; }
+  const inp = document.getElementById(`inp-${idx}`);
+  const clr = document.getElementById(`clr-${idx}`);
+  if (inp) inp.value = stops[idx].label;
+  if (clr) clr.classList.add('show');
+  placeMarker(idx, latlng);
+  clearRoute();
+  showToast('Lokasi dipilih dari peta ✓');
+});
+
+/* ── MARKERS ── */
+function makeIcon(i) {
+  const total  = stops.length;
+  const color  = i === 0 ? COLORS.origin : i === total - 1 ? COLORS.dest : COLORS.stop;
+  const letter = i === 0 ? 'A' : i === total - 1 ? String.fromCharCode(64 + total) : String.fromCharCode(65 + i);
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:30px;height:30px;border-radius:50% 50% 50% 0;background:${color};border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">
+      <span style="transform:rotate(45deg);color:#fff;font-size:10px;font-weight:700;font-family:sans-serif;">${letter}</span></div>`,
+    iconSize: [30, 30], iconAnchor: [15, 30],
+  });
+}
+
+function placeMarker(idx, latlng) {
+  if (markers[idx]) map.removeLayer(markers[idx]);
+  markers[idx] = L.marker([latlng.lat, latlng.lng], { icon: makeIcon(idx), draggable: true }).addTo(map);
+  markers[idx].on('dragend', async ev => {
+    const p = ev.target.getLatLng();
+    stops[idx].latlng = { lat: p.lat, lng: p.lng };
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${p.lat}&lon=${p.lng}`, { headers: { 'Accept-Language': 'id' } });
+      const d = await r.json();
+      stops[idx].label = d.display_name || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+    } catch { stops[idx].label = `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`; }
+    const inp = document.getElementById(`inp-${idx}`);
+    if (inp) inp.value = stops[idx].label;
+    clearRoute();
+    showToast('Marker digeser — hitung ulang untuk memperbarui rute');
+  });
+}
+
+/* ── KALKULASI RUTE ── */
+async function calculateRoute() {
+  const filled = stops.filter(s => s.latlng);
+  if (filled.length < 2)            { showToast('Minimal 2 lokasi harus diisi'); return; }
+  if (filled.length < stops.length) { showToast('Ada lokasi yang belum dipilih'); return; }
+
+  showLoading(true);
+  clearRoute();
+
+  const coords = stops.map(s => `${s.latlng.lng},${s.latlng.lat}`).join(';');
+  try {
+    const res  = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`);
+    const data = await res.json();
+
+    if (data.code !== 'Ok' || !data.routes.length) {
+      showToast('Rute tidak ditemukan. Coba lokasi lain.'); showLoading(false); return;
     }
 
-    document.getElementById('directionsPanel').classList.add('show');
+    const distKm    = data.routes[0].distance / 1000;
+    const rawCost   = distKm * CONFIG.RATE_PER_KM;
+    const finalCost = Math.ceil(Math.max(rawCost, CONFIG.MIN_COST) / 100) * 100;
 
-    // Fit with panel offset
-    const bounds = routeLayers
-      .filter(l => l.getBounds)
-      .reduce((acc, l) => { try { return acc.extend(l.getBounds()); } catch { return acc; } }, routeLayers.find(l=>l.getBounds)?.getBounds());
-    if (bounds) map.fitBounds(bounds, { paddingTopLeft: [420, 60], paddingBottomRight: [60, 60] });
+    lastDistance = distKm;
+    lastCost     = finalCost;
 
-  } catch (e) {
-    showToast('Gagal mengambil data rute. Cek koneksi internet.');
+    routeLayer = L.geoJSON(data.routes[0].geometry, {
+      style: { color: COLORS.origin, weight: 5, opacity: .85, lineJoin: 'round', lineCap: 'round' }
+    }).addTo(map);
+    map.fitBounds(routeLayer.getBounds(), { padding: [60, 60] });
+    stops.forEach((s, i) => { if (s.latlng) placeMarker(i, s.latlng); });
+
+    document.getElementById('res-distance').textContent = `${distKm.toFixed(2)} km`;
+    document.getElementById('res-cost').textContent     = fmtRp(finalCost);
+    document.getElementById('res-note').textContent     = `Tarif Rp ${CONFIG.RATE_PER_KM.toLocaleString('id-ID')}/km · ${stops.length} titik`;
+    document.getElementById('result-card').classList.add('visible');
+    document.getElementById('btn-wa').classList.add('visible');
+
+    showToast(`Rute ditemukan: ${distKm.toFixed(2)} km ✓`);
+  } catch (err) {
+    console.error(err);
+    showToast('Gagal menghitung rute. Periksa koneksi.');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Cari Rute &amp; Hitung Biaya`;
-    checkReady();
+    showLoading(false);
   }
 }
 
-// ────────────────────────────────────────────────────
-// LEGS TOGGLE
-// ────────────────────────────────────────────────────
-function toggleLegs() {
-  legsOpen = !legsOpen;
-  document.getElementById('legsBody').classList.toggle('open', legsOpen);
-  document.getElementById('legsChevron').style.transform = legsOpen ? 'rotate(180deg)' : '';
-  document.getElementById('legsToggleLabel').textContent = legsOpen ? 'Sembunyikan detail' : 'Detail per segmen';
-}
-
-// ────────────────────────────────────────────────────
-// TARIF
-// ────────────────────────────────────────────────────
-function updateTarif() {
-  // Recalculate biaya if we already have a result
-  const kmEl = document.getElementById('resKm');
-  const km   = parseFloat(kmEl.textContent);
-  if (!isNaN(km)) {
-    const biaya = km * TARIF();
-    document.getElementById('resBiaya').textContent = 'Rp ' + Math.round(biaya).toLocaleString('id-ID');
-    document.getElementById('viaLabel').innerHTML = `
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6l6 6-6 6"/></svg>
-      ${km.toFixed(1)} km · Rp${Math.round(biaya).toLocaleString('id-ID')}`;
-    // Update legs too
-    document.querySelectorAll('.leg-cost').forEach((el, i) => {
-      const kmLeg = parseFloat(document.querySelectorAll('.leg-km-text')[i]?.textContent);
-      if (!isNaN(kmLeg)) el.textContent = 'Rp ' + Math.round(kmLeg * TARIF()).toLocaleString('id-ID');
-    });
-  }
-}
-
-// ────────────────────────────────────────────────────
-// RESET
-// ────────────────────────────────────────────────────
-function resetResult() {
-  document.getElementById('directionsPanel').classList.remove('show');
-  document.getElementById('legsSection').style.display = 'none';
-  document.getElementById('legsBody').classList.remove('open');
-  legsOpen = false;
-}
-
+/* ── RESET ── */
 function resetAll() {
-  stops.forEach(s => { if (s.marker) map.removeLayer(s.marker); });
-  stops = [];
-  clearRoutes();
-  resetResult();
-  closeAutocomplete();
-  document.getElementById('mapHint').style.display = 'none';
-  init();
-  map.setView([-6.2, 106.8], 12);
+  markers.forEach(m => { if (m) map.removeLayer(m); });
+  markers = [];
+  clearRoute();
+  stopIdCounter = 0;
+  stops = [
+    { id: stopIdCounter++, latlng: null, label: '' },
+    { id: stopIdCounter++, latlng: null, label: '' },
+  ];
+  lastDistance = 0; lastCost = 0;
+  renderStops();
+  document.getElementById('result-card').classList.remove('visible');
+  document.getElementById('btn-wa').classList.remove('visible');
+  showToast('Data direset');
 }
 
-// ────────────────────────────────────────────────────
-// TOAST
-// ────────────────────────────────────────────────────
+function clearRoute() {
+  if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+  document.getElementById('result-card').classList.remove('visible');
+  document.getElementById('btn-wa').classList.remove('visible');
+}
+
+/* ── WHATSAPP — kirim langsung ke nomor tetap (CONFIG.WA_NUMBER) ── */
+function openWaModal() { sendWhatsApp(); } // tombol memanggil ini
+
+function sendWhatsApp() {
+  const lokasi = stops.map((s, i) => {
+    const tag  = i === 0 ? '📍 Asal' : i === stops.length - 1 ? '🏁 Tujuan' : `📌 Stop ${i}`;
+    const gmap = s.latlng ? `https://maps.google.com/?q=${s.latlng.lat},${s.latlng.lng}` : '';
+    return `${tag}: ${s.label || '-'}${gmap ? '\n    🗺 ' + gmap : ''}`;
+  }).join('\n');
+
+  const pesan = [
+    '🚚 *ORDER PENGIRIMAN BARU*',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    lokasi,
+    '━━━━━━━━━━━━━━━━━━━━━',
+    `📏 *Total Jarak:* ${lastDistance.toFixed(2)} km`,
+    `💰 *Total Ongkir:* ${fmtRp(lastCost)}`,
+    `    _(Tarif Rp ${CONFIG.RATE_PER_KM.toLocaleString('id-ID')}/km)_`,
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '_Dikirim via Kalkulator Ongkir Kurir_ 🛵',
+  ].join('\n');
+
+  window.open(`https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(pesan)}`, '_blank');
+}
+
+/* ── GOOGLE MAPS LINK RESOLVER ──────────────────────────────────────
+   Mendukung semua format Google Maps:
+   • https://maps.app.goo.gl/xxxxx          ← short link (perlu unshorten)
+   • https://www.google.com/maps/dir/lat,lng/...
+   • https://www.google.com/maps/@lat,lng,...
+   • https://www.google.com/maps/place/.../@lat,lng,...
+   • https://maps.google.com/?q=lat,lng
+   • https://www.google.com/maps?q=lat,lng
+
+   Strategi untuk short link (goo.gl): karena browser memblokir
+   fetch redirect lintas-origin, kita pakai beberapa proxy CORS
+   secara waterfall. Jika semua gagal, fallback ke pencarian
+   nama tempat via Nominatim dari teks URL.
+──────────────────────────────────────────────────────────────────── */
+function isGoogleMapsUrl(str) {
+  return /maps\.app\.goo\.gl|maps\.google\.com|google\.com\/maps/i.test(str.trim());
+}
+
+/**
+ * Ekstrak koordinat dari URL Google Maps panjang.
+ * Urutan prioritas:
+ *  1. /dir/lat,lng/...       → koordinat titik asal rute
+ *  2. @lat,lng               → viewport center
+ *  3. ?q=lat,lng             → query koordinat
+ *  4. ll=lat,lng             → legacy format
+ */
+function extractCoordsFromUrl(url) {
+  const patterns = [
+    /\/dir\/(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&/@](-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/,
+    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) {
+      const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+    }
+  }
+  return null;
+}
+
+/**
+ * Ekstrak koordinat dari blok data= Google Maps.
+ * Format: !1d<lng>!2d<lat>  (pasangan per waypoint)
+ * Mengembalikan array [{lat, lng}, ...] — satu per waypoint yang punya koordinat.
+ *
+ * Contoh data=:
+ *   !1m1!4e1!1m5!1m1!1s0x...!2m2!1d106.7116904!2d-6.3260285
+ *   ↑ !1d = lng, !2d = lat
+ */
+function extractDataCoords(url) {
+  const dataMatch = url.match(/[?&/]data=([^?&#]+)/);
+  if (!dataMatch) return [];
+
+  const data = decodeURIComponent(dataMatch[1]);
+  const coords = [];
+
+  // Cari semua pasangan !1d<lng>!2d<lat>
+  const re = /!1d(-?\d+\.\d+).*?!2d(-?\d+\.\d+)/g;
+  let m;
+  while ((m = re.exec(data)) !== null) {
+    const lng = parseFloat(m[1]), lat = parseFloat(m[2]);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      coords.push({ lat, lng });
+    }
+  }
+
+  return coords;
+}
+
+/**
+ * Khusus URL /maps/dir/ — ekstrak SEMUA waypoint dengan koordinat presisi.
+ * Strategi:
+ *   1. Titik pertama: dari path /dir/lat,lng/ (koordinat langsung di URL)
+ *   2. Titik berikutnya: dari data= block (!1d!2d pairs) — ini koordinat tepat
+ *      yang dipakai Google, lebih akurat dari nama tempat
+ *   3. Fallback untuk titik tanpa koordinat: nama tempat dari path
+ */
+function extractDirWaypoints(url) {
+  const results = [];
+
+  // Ambil bagian path antara /dir/ dan /@
+  const dirMatch = url.match(/\/maps\/dir\/(.+?)(?:\/[@]|\/data=|$)/);
+  if (!dirMatch) return [];
+
+  const pathParts = dirMatch[1].split('/').filter(p => p && p.trim());
+
+  // Parse setiap segmen path
+  const pathWaypoints = pathParts.map(p => {
+    const decoded = decodeURIComponent(p.replace(/\+/g, ' ')).trim();
+    const coordOnly = decoded.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+    if (coordOnly) {
+      const lat = parseFloat(coordOnly[1]), lng = parseFloat(coordOnly[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)
+        return { type: 'coords', lat, lng };
+    }
+    if (decoded.length >= 2 && !/^\d+$/.test(decoded))
+      return { type: 'name', name: decoded };
+    return null;
+  }).filter(Boolean);
+
+  // Ambil koordinat presisi dari blok data= (lebih akurat dari nama tempat)
+  const dataCoords = extractDataCoords(url);
+
+  // Gabungkan: untuk setiap waypoint di path,
+  // jika punya tipe 'name' maka ganti dengan koordinat dari data= jika tersedia
+  let dataIdx = 0;
+  for (const wp of pathWaypoints) {
+    if (wp.type === 'coords') {
+      results.push(wp);
+      // data= coords urutan pertama biasanya sesuai waypoint pertama — skip
+      // (titik asal dari path sudah akurat)
+    } else {
+      // Waypoint nama → cari koordinat di data=
+      if (dataIdx < dataCoords.length) {
+        results.push({ type: 'coords', ...dataCoords[dataIdx] });
+        dataIdx++;
+      } else {
+        results.push(wp); // fallback tetap pakai nama
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Ekstrak nama tempat dari URL Google Maps untuk fallback Nominatim.
+ * Contoh: /maps/place/Taman+Bermain+RW+12/...  → "Taman Bermain RW 12"
+ */
+function extractPlaceNameFromUrl(url) {
+  const m = url.match(/\/maps\/(?:place|search)\/([^/@?]+)/);
+  if (m) return decodeURIComponent(m[1].replace(/\+/g, ' '));
+  const q = url.match(/[?&]q=([^&@]+)/);
+  if (q) return decodeURIComponent(q[1].replace(/\+/g, ' '));
+  return null;
+}
+
+/**
+ * Unshorten URL goo.gl menggunakan beberapa proxy CORS.
+ * Semua proxy menggunakan GET biasa (bukan HEAD) karena lebih reliable.
+ * Mengembalikan URL panjang atau null jika semua gagal.
+ */
+async function unshortenUrl(shortUrl) {
+  const encoded = encodeURIComponent(shortUrl);
+
+  // Proxy #1: corsproxy.io — fetch halaman HTML lalu cari meta redirect
+  try {
+    const res = await fetch(`https://corsproxy.io/?${encoded}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      // Cari canonical URL atau og:url di HTML Google Maps
+      const canonical = text.match(/rel=.canonical. href=.([^"']+google\.com\/maps[^"']*)/)?.[1]
+                     || text.match(/"https:\/\/www\.google\.com\/maps\/[^"]+"/)?.[0]?.replace(/"/g,'');
+      if (canonical && isGoogleMapsUrl(canonical)) return canonical;
+      // Cari di script tag
+      const scriptCoords = text.match(/google\.com\/maps[^\s"'\\]*/)?.[0];
+      if (scriptCoords) return 'https://' + scriptCoords;
+    }
+  } catch { /* coba proxy berikutnya */ }
+
+  // Proxy #2: api.codetabs.com
+  try {
+    const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encoded}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      const m = text.match(/https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\]+/);
+      if (m) return m[0];
+    }
+  } catch { /* coba proxy berikutnya */ }
+
+  // Proxy #3: htmlpreview / thingproxy
+  try {
+    const res = await fetch(`https://thingproxy.freeboard.io/fetch/${encoded}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const text = await res.text();
+      const m = text.match(/https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\]+/);
+      if (m) return m[0];
+    }
+  } catch { /* semua gagal */ }
+
+  return null;
+}
+
+async function resolveGoogleMapsLink(idx, rawUrl) {
+  const url = rawUrl.trim();
+  showToast('Memproses link Google Maps…');
+
+  // ── Langkah 1: URL panjang dengan /dir/ → isi SEMUA stop sekaligus ──
+  if (/\/maps\/dir\//i.test(url)) {
+    await applyDirWaypoints(idx, url);
+    return;
+  }
+
+  // ── Langkah 2: URL panjang biasa → ekstrak satu koordinat ──
+  const direct = extractCoordsFromUrl(url);
+  if (direct) { await applyCoords(idx, direct.lat, direct.lng); return; }
+
+  // ── Langkah 3: Short link (goo.gl) → unshorten dulu ──
+  if (/maps\.app\.goo\.gl/i.test(url)) {
+    showToast('Membuka short link…');
+    const longUrl = await unshortenUrl(url);
+    if (longUrl) {
+      if (/\/maps\/dir\//i.test(longUrl)) { await applyDirWaypoints(idx, longUrl); return; }
+      const coords = extractCoordsFromUrl(longUrl);
+      if (coords) { await applyCoords(idx, coords.lat, coords.lng); return; }
+      const pname  = extractPlaceNameFromUrl(longUrl);
+      if (pname)   { await resolveByName(idx, pname); return; }
+    }
+    showToast('Tidak bisa memproses short link. Coba buka di browser lalu salin URL panjangnya.');
+    return;
+  }
+
+  // ── Langkah 4: Coba nama tempat dari URL ──
+  const placeName = extractPlaceNameFromUrl(url);
+  if (placeName) { await resolveByName(idx, placeName); return; }
+
+  showToast('Format URL Google Maps tidak dikenali.');
+}
+
+/**
+ * Dari URL /maps/dir/, ekstrak semua waypoint dan isi stop-stop secara otomatis.
+ * - Jika jumlah waypoint == jumlah stop yang ada → isi semua
+ * - Jika lebih banyak waypoint → tambah stop baru otomatis
+ * - Jika hanya 1 waypoint → isi stop idx saja
+ * idx = indeks stop yang sedang aktif (jadi tahu titik mana yang memulai)
+ */
+async function applyDirWaypoints(startIdx, url) {
+  const waypoints = extractDirWaypoints(url);
+  if (!waypoints.length) {
+    // Fallback: tidak ada waypoint terdeteksi, coba koordinat biasa
+    const coords = extractCoordsFromUrl(url);
+    if (coords) { await applyCoords(startIdx, coords.lat, coords.lng); return; }
+    showToast('Tidak ada titik lokasi yang ditemukan di URL ini.');
+    return;
+  }
+
+  // Jika hanya 1 waypoint, isi stop aktif saja
+  if (waypoints.length === 1) {
+    const wp = waypoints[0];
+    if (wp.type === 'coords') await applyCoords(startIdx, wp.lat, wp.lng);
+    else await resolveByName(startIdx, wp.name);
+    return;
+  }
+
+  // Banyak waypoint — isi mulai dari stop pertama (index 0), bukan startIdx,
+  // karena URL /dir/ sudah merepresentasikan rute lengkap asal→tujuan
+  showToast(`Ditemukan ${waypoints.length} titik lokasi, mengisi semua stop…`);
+
+  // Pastikan jumlah stops cukup (tambah jika perlu)
+  while (stops.length < waypoints.length) {
+    stops.push({ id: stopIdCounter++, latlng: null, label: '' });
+  }
+  renderStops(); // re-render dulu agar input/marker index sync
+
+  // Isi setiap waypoint secara paralel
+  const tasks = waypoints.map(async (wp, i) => {
+    if (wp.type === 'coords') {
+      await applyCoords(i, wp.lat, wp.lng);
+    } else {
+      await resolveByName(i, wp.name);
+    }
+  });
+
+  await Promise.all(tasks);
+
+  // Fit peta ke semua marker yang baru dipasang
+  const validLatLngs = stops.slice(0, waypoints.length)
+    .filter(s => s.latlng)
+    .map(s => [s.latlng.lat, s.latlng.lng]);
+  if (validLatLngs.length >= 2) {
+    map.fitBounds(validLatLngs, { padding: [60, 60] });
+  }
+
+  clearRoute();
+  showToast(`${waypoints.length} lokasi berhasil diisi dari Google Maps ✓`);
+}
+
+/** Cari lokasi via Nominatim berdasarkan nama tempat.
+ *  Untuk nama panjang (dari URL dir), coba dengan nama lengkap dulu,
+ *  lalu potong di koma pertama jika tidak ditemukan.
+ */
+async function resolveByName(idx, name) {
+  // Bersihkan: buang suffix seperti ", Indonesia" yang bikin noise,
+  // tapi pertahankan nama + kota agar akurat
+  const clean = name.replace(/,\s*(Indonesia|Banten|Jawa\s+\w+|DKI\s+Jakarta)\s*$/i, '').trim();
+  showToast(`Mencari lokasi…`);
+  try {
+    // Percobaan 1: nama lengkap
+    let r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&limit=1`,
+      { headers: { 'Accept-Language': 'id' } }
+    );
+    let d = await r.json();
+
+    // Percobaan 2: hanya bagian sebelum koma pertama (nama tempat utama)
+    if (!d.length && clean.includes(',')) {
+      const shortName = clean.split(',')[0].trim();
+      r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(shortName)}&limit=1`,
+        { headers: { 'Accept-Language': 'id' } }
+      );
+      d = await r.json();
+    }
+
+    if (d.length) {
+      await applyCoords(idx, parseFloat(d[0].lat), parseFloat(d[0].lon));
+    } else {
+      // Gagal tapi jangan blokir — biarkan stop kosong, user bisa isi manual
+      showToast(`Lokasi "${clean.substring(0, 30)}…" tidak ditemukan, isi manual.`);
+    }
+  } catch {
+    showToast('Gagal mencari lokasi. Periksa koneksi.');
+  }
+}
+
+async function applyCoords(idx, lat, lng) {
+  const latlng = { lat, lng };
+  stops[idx].latlng = latlng;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': 'id' } });
+    const d = await r.json();
+    stops[idx].label = d.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  } catch {
+    stops[idx].label = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  }
+  const inp = document.getElementById(`inp-${idx}`);
+  const clr = document.getElementById(`clr-${idx}`);
+  if (inp) inp.value = stops[idx].label;
+  if (clr) clr.classList.add('show');
+  placeMarker(idx, latlng);
+  map.setView([lat, lng], 15, { animate: true });
+  clearRoute();
+  showToast('Lokasi dari link Google Maps berhasil ✓');
+}
+
+/* ── SIDEBAR MOBILE ── */
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const b = document.getElementById('toggle-sidebar');
+  s.classList.toggle('open');
+  b.innerHTML = s.classList.contains('open')
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Tutup Panel`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg> Buka Panel`;
+}
+
+/* ── TOAST ── */
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -790,19 +1115,14 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ────────────────────────────────────────────────────
-// INIT
-// ────────────────────────────────────────────────────
-function init() {
-  stops = [
-    { lat: null, lng: null, address: null, marker: null },
-    { lat: null, lng: null, address: null, marker: null },
-  ];
-  renderInputs();
-  checkReady();
-}
+function showLoading(v) { document.getElementById('loading-overlay').classList.toggle('show', v); }
 
-init();
+/* ── INIT ── */
+stops = [
+  { id: stopIdCounter++, latlng: null, label: '' },
+  { id: stopIdCounter++, latlng: null, label: '' },
+];
+renderStops();
 </script>
 </body>
 </html>
