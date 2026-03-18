@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3:42 Kalkulator Jarak & Ongkir Kurir</title>
+  <title>3:56 Kalkulator Jarak & Ongkir Kurir</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -817,29 +817,27 @@ function extractCoordsFromUrl(url) {
 function extractDataCoords(url) {
   const dataMatch = url.match(/[?&/]data=([^?&#]+)/);
   if (!dataMatch) return [];
-
+  
   const data = decodeURIComponent(dataMatch[1]);
   const coords = [];
-
-  // Format 1 (PC): !1d<lng>!2d<lat>
-  const re1 = /!1d(-?\d+\.\d+).*?!2d(-?\d+\.\d+)/g;
-  let m;
-  while ((m = re1.exec(data)) !== null) {
-    const lng = parseFloat(m[1]), lat = parseFloat(m[2]);
-    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)
-      coords.push({ lat, lng });
+  
+  // Format desktop: !1d<lng>!2d<lat>
+  const reDesktop = /!1d(-?\d+\.\d+)!2d(-?\d+\.\d+)/g;
+  let match;
+  while ((match = reDesktop.exec(data)) !== null) {
+    const lng = parseFloat(match[1]);
+    const lat = parseFloat(match[2]);
+    if (!isNaN(lat) && !isNaN(lng)) coords.push({ lat, lng });
   }
-
-  // Format 2 (mobile/Kiwi): !3d<lat>!4d<lng>
-  if (!coords.length) {
-    const re2 = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g;
-    while ((m = re2.exec(data)) !== null) {
-      const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
-      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)
-        coords.push({ lat, lng });
-    }
+  
+  // Format mobile/alternatif: !3d<lat>!4d<lng>
+  const reMobile = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g;
+  while ((match = reMobile.exec(data)) !== null) {
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (!isNaN(lat) && !isNaN(lng)) coords.push({ lat, lng });
   }
-
+  
   return coords;
 }
 
