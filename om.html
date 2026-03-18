@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1:54 Kalkulator Jarak & Ongkir Kurir</title>
+  <title>2:05 Kalkulator Jarak & Ongkir Kurir</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -601,7 +601,7 @@ function useGPS(idx) {
     const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     stops[idx].latlng = latlng;
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`, { headers: { 'Accept-Language': 'id' } });
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&addressdetails=1&lat=${latlng.lat}&lon=${latlng.lng}`, { headers: { 'Accept-Language': 'id' } });
       const d = await r.json();
       stops[idx].label = d.display_name || `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
     } catch { stops[idx].label = `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`; }
@@ -623,7 +623,7 @@ map.on('click', async e => {
   const latlng = { lat: e.latlng.lat, lng: e.latlng.lng };
   stops[idx].latlng = latlng;
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`, { headers: { 'Accept-Language': 'id' } });
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&addressdetails=1&lat=${latlng.lat}&lon=${latlng.lng}`, { headers: { 'Accept-Language': 'id' } });
     const d = await r.json();
     stops[idx].label = d.display_name || `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
   } catch { stops[idx].label = `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`; }
@@ -656,7 +656,7 @@ function placeMarker(idx, latlng) {
     const p = ev.target.getLatLng();
     stops[idx].latlng = { lat: p.lat, lng: p.lng };
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${p.lat}&lon=${p.lng}`, { headers: { 'Accept-Language': 'id' } });
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&addressdetails=1&lat=${p.lat}&lon=${p.lng}`, { headers: { 'Accept-Language': 'id' } });
       const d = await r.json();
       stops[idx].label = d.display_name || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
     } catch { stops[idx].label = `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`; }
@@ -1219,7 +1219,7 @@ async function applyCoords(idx, lat, lng) {
   const latlng = { lat, lng };
   stops[idx].latlng = latlng;
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': 'id' } });
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&addressdetails=1&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': 'id' } });
     const d = await r.json();
     stops[idx].label = d.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   } catch {
