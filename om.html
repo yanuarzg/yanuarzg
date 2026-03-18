@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3:23 Kalkulator Jarak & Ongkir Kurir</title>
+  <title>3:42 Kalkulator Jarak & Ongkir Kurir</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -863,39 +863,68 @@ function extractDirWaypoints(url) {
   const cleanPath = dirMatch[1].split(/\/data=/)[0];
   const pathParts = cleanPath.split('/').filter(p => p && p.trim());
 
-  // Parse path: koordinat atau nama
+  // Parse setiap bagian path: bisa nama atau koordinat langsung
   const pathItems = pathParts.map(p => {
     const decoded = decodeURIComponent(p.replace(/\+/g, ' ')).trim();
-    const coord   = decoded.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+    const coord = decoded.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
     if (coord) {
-      const lat = parseFloat(coord[1]), lng = parseFloat(coord[2]);
-      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)
+      const lat = parseFloat(coord[1]);
+      const lng = parseFloat(coord[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
         return { type: 'coords', lat, lng };
+      }
     }
     if (decoded.length >= 2) return { type: 'name', name: decoded };
     return null;
   }).filter(Boolean);
 
-  // Koordinat dari data= saja (TIDAK pakai viewport)
-  const dataCoords = extractDataCoords(url);
+  // Ambil SEMUA koordinat yang tersedia dari data= block (kedua format)
+  const dataCoords = [];
+  
+  const dataMatch = url.match(/[?&/]data=([^?&#]+)/);
+  if (dataMatch) {
+    const data = decodeURIComponent(dataMatch[1]);
+    
+    // Format desktop: !1d<lng>!2d<lat>
+    const re1 = /!1d(-?\d+\.\d+)!2d(-?\d+\.\d+)/g;
+    let m;
+    while ((m = re1.exec(data)) !== null) {
+      const lng = parseFloat(m[1]);
+      const lat = parseFloat(m[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        dataCoords.push({ lat, lng });
+      }
+    }
+    
+    // Format mobile: !3d<lat>!4d<lng>
+    const re2 = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g;
+    while ((m = re2.exec(data)) !== null) {
+      const lat = parseFloat(m[1]);
+      const lng = parseFloat(m[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        dataCoords.push({ lat, lng });
+      }
+    }
+  }
 
+  // Bangun hasil akhir
   const results = [];
-  let spareIdx = 0;
+  let coordIdx = 0;  // pointer ke dataCoords yang tersedia
 
   for (const item of pathItems) {
     if (item.type === 'coords') {
       results.push({ lat: item.lat, lng: item.lng });
     } else {
-      // Waypoint nama: pakai koordinat dari data= jika ada
-      if (spareIdx < dataCoords.length) {
+      // Waypoint berupa nama → coba ambil koordinat dari data= block jika ada
+      if (coordIdx < dataCoords.length) {
         results.push({
-          lat:  dataCoords[spareIdx].lat,
-          lng:  dataCoords[spareIdx].lng,
-          name: item.name,
+          lat: dataCoords[coordIdx].lat,
+          lng: dataCoords[coordIdx].lng,
+          name: item.name
         });
-        spareIdx++;
+        coordIdx++;
       } else {
-        // Tidak ada koordinat → biarkan sebagai nama, resolveByName akan handle
+        // Tidak ada koordinat cadangan → biarkan sebagai nama saja
         results.push({ type: 'name', name: item.name });
       }
     }
@@ -903,7 +932,6 @@ function extractDirWaypoints(url) {
 
   return results;
 }
-
 /**
  * Ekstrak nama tempat dari URL Google Maps untuk fallback Nominatim.
  * Contoh: /maps/place/Taman+Bermain+RW+12/...  → "Taman Bermain RW 12"
