@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2:05 Kalkulator Jarak & Ongkir Kurir</title>
+  <title>2:30 Kalkulator Jarak & Ongkir Kurir</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -1149,6 +1149,13 @@ async function applyDirWaypoints(startIdx, url) {
   // Isi setiap waypoint SECARA BERURUTAN (bukan concurrent).
   // Nominatim membatasi request paralel dari IP yang sama → hasilnya bisa
   // tertukar atau salah jika dikirim serentak via Promise.all.
+  //
+  // Anchor = koordinat waypoint pertama yang sudah diketahui.
+  // Digunakan sebagai viewbox untuk resolveByName agar pencarian
+  // dibatasi di area yang relevan (tidak tertukar dengan kota lain).
+  const anchorCoords = waypoints.find(w => w.type === 'coords') || null;
+  const anchor = anchorCoords ? { lat: anchorCoords.lat, lng: anchorCoords.lng } : null;
+
   for (let i = 0; i < waypoints.length; i++) {
     const wp = waypoints[i];
     if (wp.type === 'coords') {
@@ -1157,7 +1164,7 @@ async function applyDirWaypoints(startIdx, url) {
         showToast('⚠️ Titik tujuan dari perkiraan viewport — geser marker jika perlu');
       }
     } else {
-      await resolveByName(i, wp.name);
+      await resolveByName(i, wp.name, anchor);
     }
     // Jeda 350ms antar request agar Nominatim tidak rate-limit
     if (i < waypoints.length - 1) await sleep(350);
@@ -1178,23 +1185,51 @@ async function applyDirWaypoints(startIdx, url) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /** Cari lokasi via Nominatim berdasarkan nama tempat.
- *  Untuk nama panjang (dari URL dir), coba dengan nama lengkap dulu,
- *  lalu potong di koma pertama jika tidak ditemukan.
+ *  @param {number} idx        - indeks stop yang akan diisi
+ *  @param {string} name       - nama tempat / alamat lengkap
+ *  @param {object} [anchor]   - {lat,lng} koordinat referensi untuk membatasi pencarian
+ *                               (misal: koordinat asal rute agar tidak salah kota)
  */
-async function resolveByName(idx, name) {
-  // Bersihkan: buang suffix seperti ", Indonesia" yang bikin noise,
-  // tapi pertahankan nama + kota agar akurat
+async function resolveByName(idx, name, anchor) {
+  // Bersihkan suffix negara/provinsi yang membingungkan Nominatim
   const clean = name.replace(/,\s*(Indonesia|Banten|Jawa\s+\w+|DKI\s+Jakarta)\s*$/i, '').trim();
   showToast(`Mencari lokasi…`);
+
+  // Bangun viewbox ±0.15° (~16km) dari anchor jika tersedia
+  // Ini memaksa Nominatim hanya cari di area sekitar titik asal rute
+  const viewbox = anchor
+    ? `&viewbox=${anchor.lng - 0.15},${anchor.lat + 0.15},${anchor.lng + 0.15},${anchor.lat - 0.15}&bounded=1`
+    : '';
+
   try {
-    // Percobaan 1: nama lengkap
+    // Percobaan 1: nama lengkap + viewbox
     let r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&limit=1${viewbox}`,
       { headers: { 'Accept-Language': 'id' } }
     );
     let d = await r.json();
 
-    // Percobaan 2: hanya bagian sebelum koma pertama (nama tempat utama)
+    // Percobaan 2: nama lengkap tanpa bounded (anchor saja, tidak strict)
+    if (!d.length && anchor) {
+      const viewboxLoose = `&viewbox=${anchor.lng - 0.3},${anchor.lat + 0.3},${anchor.lng + 0.3},${anchor.lat - 0.3}`;
+      r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&limit=1${viewboxLoose}`,
+        { headers: { 'Accept-Language': 'id' } }
+      );
+      d = await r.json();
+    }
+
+    // Percobaan 3: nama pendek (sebelum koma pertama) + viewbox
+    if (!d.length && clean.includes(',')) {
+      const shortName = clean.split(',')[0].trim();
+      r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(shortName)}&limit=1${viewbox}`,
+        { headers: { 'Accept-Language': 'id' } }
+      );
+      d = await r.json();
+    }
+
+    // Percobaan 4: nama pendek tanpa viewbox (last resort)
     if (!d.length && clean.includes(',')) {
       const shortName = clean.split(',')[0].trim();
       r = await fetch(
@@ -1207,8 +1242,7 @@ async function resolveByName(idx, name) {
     if (d.length) {
       await applyCoords(idx, parseFloat(d[0].lat), parseFloat(d[0].lon));
     } else {
-      // Gagal tapi jangan blokir — biarkan stop kosong, user bisa isi manual
-      showToast(`Lokasi "${clean.substring(0, 30)}…" tidak ditemukan, isi manual.`);
+      showToast(`Lokasi tidak ditemukan, isi manual.`);
     }
   } catch {
     showToast('Gagal mencari lokasi. Periksa koneksi.');
