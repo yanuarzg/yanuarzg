@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kalkulator Jarak & Ongkir Kurir</title>
+  <title>Kalkulator Jarak & Ongkir Kurir 1:28</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -918,107 +918,183 @@ function extractPlaceNameFromUrl(url) {
   return null;
 }
 
-/**
- * Unshorten URL goo.gl menggunakan beberapa proxy CORS.
- * Mencari URL Google Maps terpanjang (termasuk data=) di HTML respons.
- * Mengembalikan URL panjang atau null jika semua gagal.
- */
-async function unshortenUrl(shortUrl) {
-  const encoded = encodeURIComponent(shortUrl);
-
-  // Helper: cari URL Google Maps terpanjang di teks HTML
-  function extractLongestMapsUrl(text) {
-    // Cari semua URL google maps di HTML (termasuk yang di dalam script/meta)
-    const candidates = [];
-
-    // Pattern 1: dalam atribut href/content
-    const re1 = /(?:href|content|url)=["']([^"']*google\.com\/maps[^"']*)/gi;
-    let m;
-    while ((m = re1.exec(text)) !== null) candidates.push(decodeURIComponent(m[1]));
-
-    // Pattern 2: dalam teks/script (tidak dalam atribut)
-    const re2 = /https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\)]+/g;
-    while ((m = re2.exec(text)) !== null) candidates.push(m[0]);
-
-    if (!candidates.length) return null;
-
-    // Kembalikan yang terpanjang (kemungkinan besar punya data=)
-    return candidates.reduce((a, b) => a.length >= b.length ? a : b);
-  }
-
-  // Proxy #1: corsproxy.io
-  try {
-    const res = await fetch(`https://corsproxy.io/?${encoded}`, {
-      signal: AbortSignal.timeout(7000)
-    });
-    if (res.ok) {
-      const text = await res.text();
-      const best = extractLongestMapsUrl(text);
-      if (best && isGoogleMapsUrl(best)) return best;
-    }
-  } catch { /* lanjut ke proxy berikutnya */ }
-
-  // Proxy #2: api.codetabs.com
-  try {
-    const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encoded}`, {
-      signal: AbortSignal.timeout(7000)
-    });
-    if (res.ok) {
-      const text = await res.text();
-      const best = extractLongestMapsUrl(text);
-      if (best && isGoogleMapsUrl(best)) return best;
-    }
-  } catch { /* lanjut ke proxy berikutnya */ }
-
-  // Proxy #3: thingproxy
-  try {
-    const res = await fetch(`https://thingproxy.freeboard.io/fetch/${encoded}`, {
-      signal: AbortSignal.timeout(7000)
-    });
-    if (res.ok) {
-      const text = await res.text();
-      const best = extractLongestMapsUrl(text);
-      if (best && isGoogleMapsUrl(best)) return best;
-    }
-  } catch { /* semua gagal */ }
-
-  return null;
-}
+/* unshortenUrl dihapus — semua proxy CORS diblokir dari GitHub Pages.
+   Short link kini ditangani via showShortLinkHelper (buka tab baru). */
 
 async function resolveGoogleMapsLink(idx, rawUrl) {
   const url = rawUrl.trim();
-  showToast('Memproses link Google Maps…');
 
   // ── Langkah 1: URL panjang dengan /dir/ → isi SEMUA stop sekaligus ──
   if (/\/maps\/dir\//i.test(url)) {
+    showToast('Memproses link Google Maps…');
     await applyDirWaypoints(idx, url);
     return;
   }
 
   // ── Langkah 2: URL panjang biasa → ekstrak satu koordinat ──
   const direct = extractCoordsFromUrl(url);
-  if (direct) { await applyCoords(idx, direct.lat, direct.lng); return; }
-
-  // ── Langkah 3: Short link (goo.gl) → unshorten dulu ──
-  if (/maps\.app\.goo\.gl/i.test(url)) {
-    showToast('Membuka short link…');
-    const longUrl = await unshortenUrl(url);
-    if (longUrl) {
-      if (/\/maps\/dir\//i.test(longUrl)) { await applyDirWaypoints(idx, longUrl); return; }
-      const coords = extractCoordsFromUrl(longUrl);
-      if (coords) { await applyCoords(idx, coords.lat, coords.lng); return; }
-      const pname  = extractPlaceNameFromUrl(longUrl);
-      if (pname)   { await resolveByName(idx, pname); return; }
-    }
-    showToast('Tidak bisa memproses short link. Coba buka di browser lalu salin URL panjangnya.');
+  if (direct) {
+    showToast('Memproses link Google Maps…');
+    await applyCoords(idx, direct.lat, direct.lng);
     return;
   }
 
-  // ── Langkah 4: Coba nama tempat dari URL ──
+  // ── Langkah 3: Short link (goo.gl) → tidak bisa di-resolve tanpa proxy ──
+  // Semua proxy CORS diblokir dari GitHub Pages.
+  // Solusi: buka short link di tab baru → user salin URL panjang → paste di sini.
+  if (/maps\.app\.goo\.gl/i.test(url)) {
+    showShortLinkHelper(idx, url);
+    return;
+  }
+
+  // ── Langkah 4: Nama tempat di URL ──
   const placeName = extractPlaceNameFromUrl(url);
   if (placeName) { await resolveByName(idx, placeName); return; }
 
   showToast('Format URL Google Maps tidak dikenali.');
+}
+
+/**
+ * Tampilkan helper modal untuk short link goo.gl:
+ * 1. Otomatis buka short link di tab baru
+ * 2. Minta user copy URL panjang dari address bar
+ * 3. Paste di sini → diproses otomatis
+ */
+function showShortLinkHelper(idx, shortUrl) {
+  // Hapus modal lama jika ada
+  const old = document.getElementById('shortlink-modal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'shortlink-modal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9997;
+    display:flex;align-items:center;justify-content:center;padding:16px;
+  `;
+
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px 20px;width:min(360px,100%);box-shadow:0 8px 32px rgba(0,0,0,.2);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:36px;height:36px;background:#1a73e8;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:15px;">Butuh URL Lengkap</div>
+          <div style="font-size:11px;color:#5f6368;margin-top:1px;">Short link tidak bisa diproses langsung</div>
+        </div>
+      </div>
+
+      <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#202124;line-height:1.7;">
+        <b>Ikuti 3 langkah ini:</b><br>
+        <span style="color:#1a73e8;">①</span> Klik tombol di bawah untuk membuka link<br>
+        <span style="color:#1a73e8;">②</span> <b>Salin URL panjang</b> dari address bar browser<br>
+        <span style="color:#1a73e8;">③</span> Paste URL tersebut di kolom input di bawah
+      </div>
+
+      <button id="slh-open" style="
+        width:100%;padding:11px;background:#1a73e8;color:#fff;border:none;
+        border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;
+      ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Buka Link di Tab Baru
+      </button>
+
+      <textarea id="slh-paste" placeholder="Paste URL panjang dari address bar di sini…" style="
+        width:100%;height:72px;padding:10px 12px;border:1.5px solid #e0e0e0;
+        border-radius:9px;font-family:inherit;font-size:12.5px;resize:none;
+        outline:none;transition:border-color .2s;box-sizing:border-box;
+      "></textarea>
+
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="slh-cancel" style="
+          flex:1;padding:10px;background:#f8f9fa;color:#5f6368;border:none;
+          border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+        ">Batal</button>
+        <button id="slh-confirm" style="
+          flex:2;padding:10px;background:#34a853;color:#fff;border:none;
+          border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+        ">Proses URL →</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Buka link otomatis setelah modal muncul
+  setTimeout(() => window.open(shortUrl, '_blank'), 300);
+
+  // Tombol buka manual
+  document.getElementById('slh-open').onclick = () => window.open(shortUrl, '_blank');
+
+  // Focus textarea
+  setTimeout(() => document.getElementById('slh-paste')?.focus(), 400);
+
+  // Textarea: border biru saat focus
+  const ta = document.getElementById('slh-paste');
+  ta.addEventListener('focus', () => { ta.style.borderColor = '#1a73e8'; });
+  ta.addEventListener('blur',  () => { ta.style.borderColor = '#e0e0e0'; });
+
+  // Jika user paste langsung di textarea → proses otomatis jika URL panjang
+  ta.addEventListener('paste', e => {
+    setTimeout(() => {
+      const val = ta.value.trim();
+      if (isGoogleMapsUrl(val) && !/maps\.app\.goo\.gl/i.test(val)) {
+        modal.remove();
+        // Reset input utama dengan URL panjang
+        const inp = document.getElementById(`inp-${idx}`);
+        if (inp) inp.value = val;
+        resolveGoogleMapsLink(idx, val);
+      }
+    }, 50);
+  });
+
+  // Tombol proses
+  document.getElementById('slh-confirm').onclick = () => {
+    const val = ta.value.trim();
+    if (!val) { ta.style.borderColor = '#ea4335'; ta.focus(); return; }
+    if (/maps\.app\.goo\.gl/i.test(val)) {
+      ta.style.borderColor = '#ea4335';
+      ta.placeholder = '⚠️ Ini masih short link. Salin URL PANJANG dari address bar browser.';
+      ta.value = '';
+      return;
+    }
+    if (!isGoogleMapsUrl(val)) {
+      ta.style.borderColor = '#ea4335';
+      ta.placeholder = '⚠️ Bukan URL Google Maps yang valid.';
+      ta.value = '';
+      return;
+    }
+    modal.remove();
+    const inp = document.getElementById(`inp-${idx}`);
+    if (inp) inp.value = val;
+    resolveGoogleMapsLink(idx, val);
+  };
+
+  // Enter di textarea → proses
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById('slh-confirm').click();
+    }
+  });
+
+  // Batal
+  document.getElementById('slh-cancel').onclick = () => {
+    modal.remove();
+    const inp = document.getElementById(`inp-${idx}`);
+    if (inp) { inp.value = ''; inp.focus(); }
+  };
+
+  // Klik backdrop
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.remove();
+  });
 }
 
 /**
