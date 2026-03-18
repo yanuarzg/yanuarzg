@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kalkulator Ongkos Kirim</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F7F6F3;
+      --surface: #FFFFFF;
+      --surface-2: #F0EEE9;
+      --border: #E5E2DB;
+      --text: #1A1917;
+      --text-2: #6B6860;
+      --text-3: #A8A49D;
+      --accent: #2D6A4F;
+      --accent-light: #D8F3DC;
+      --accent-dark: #1B4332;
+      --warn: #C0392B;
+      --warn-light: #FEF0EE;
+      --warn-border: #F5C6C2;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+      --radius: 14px;
+      --radius-sm: 9px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px; height: 52px;
+      background: var(--accent);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(45,106,79,0.25);
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    p.subtitle {
+      margin-top: 8px;
+      color: var(--text-2);
+      font-size: 0.9rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 14px;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 14px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-2);
+      margin-bottom: 7px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 13px;
+      color: var(--text-3);
+      pointer-events: none;
+      display: flex;
+    }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 11px 13px 11px 38px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(45,106,79,0.12);
+    }
+
+    input::placeholder { color: var(--text-3); }
+
+    .hint {
+      margin-top: 7px;
+      font-size: 0.75rem;
+      color: var(--text-3);
+      line-height: 1.55;
+    }
+
+    .hint code {
+      font-family: 'DM Mono', monospace;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      color: var(--text-2);
+      border: 1px solid var(--border);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0 20px;
+    }
+
+    .rate-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rate-row .input-wrap { flex: 1; }
+
+    .unit-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-2);
+      background: var(--surface-2);
+      padding: 0 11px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      height: 42px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .calc-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+      box-shadow: 0 2px 8px rgba(45,106,79,0.2);
+    }
+    .calc-btn:hover { background: var(--accent-dark); box-shadow: 0 4px 12px rgba(45,106,79,0.3); }
+    .calc-btn:active { transform: scale(0.99); }
+    .calc-btn:disabled { background: var(--text-3); box-shadow: none; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box {
+      background: var(--warn-light);
+      border: 1px solid var(--warn-border);
+      border-radius: var(--radius-sm);
+      padding: 13px 15px;
+      font-size: 0.82rem;
+      color: var(--warn);
+      display: none;
+      margin-top: 14px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    /* Result */
+    .result-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 26px 28px;
+      width: 100%;
+      max-width: 500px;
+      display: none;
+      animation: fadeUp 0.28s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-bottom: 22px;
+    }
+    .check-icon {
+      width: 34px; height: 34px;
+      background: var(--accent-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .result-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .result-sub {
+      font-size: 0.77rem;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+
+    .info-pill {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 13px;
+      margin-bottom: 14px;
+      font-size: 0.78rem;
+      color: var(--text-2);
+      line-height: 1.55;
+      display: none;
+    }
+    .info-pill svg { flex-shrink: 0; margin-top: 1px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+    .stat-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      margin-bottom: 5px;
+    }
+    .stat-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .total-row {
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .total-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+    }
+    .total-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: white;
+      letter-spacing: -0.02em;
+    }
+
+    /* Manual fallback */
+    #manualSection {
+      margin-top: 20px;
+      padding-top: 0;
+    }
+    .manual-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .manual-btn:hover { background: var(--border); }
+
+    footer {
+      margin-top: 28px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-3);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 420px) {
+      body { padding: 32px 12px 60px; }
+      .stats-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 1.45rem; }
+      .card, .result-card { padding: 22px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-mark">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <h1>Kalkulator Ongkos Kirim</h1>
+    <p class="subtitle">Hitung biaya pengiriman otomatis dari link Google Maps</p>
+  </header>
+
+  <div class="card">
+    <p class="section-label">Link Rute Google Maps</p>
+
+    <div class="field">
+      <label>Tempel link Google Maps</label>
+      <div class="input-wrap">
+        <span class="input-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </span>
+        <input type="text" id="mapsLink" placeholder="https://maps.app.goo.gl/..." autocomplete="off"/>
+      </div>
+      <p class="hint">
+        Salin link dari Google Maps — bisa short URL (<code>maps.app.goo.gl</code>), URL directions, atau URL dengan koordinat.
+      </p>
+    </div>
+
+    <div class="divider"></div>
+    <p class="section-label">Tarif</p>
+
+    <div class="field">
+      <label>Harga per kilometer</label>
+      <div class="rate-row">
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </span>
+          <input type="number" id="ratePerKm" value="3000" min="0" step="100"/>
+        </div>
+        <span class="unit-badge">Rp / km</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" id="calcBtn" onclick="calculate()">
+      <div class="spinner" id="spinner"></div>
+      <svg id="btnIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Hitung Ongkos Kirim
+    </button>
+
+    <div class="error-box" id="errorBox"></div>
+    <div id="manualSection" style="display:none"></div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="check-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div>
+        <div class="result-title" id="resultTitle">Hasil Kalkulasi</div>
+        <div class="result-sub" id="resultSub">—</div>
+      </div>
+    </div>
+
+    <div class="info-pill" id="infoPill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="infoPillText"></span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Jarak Tempuh</div>
+        <div class="stat-value" id="distValue">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Tarif / km</div>
+        <div class="stat-value" id="rateValue">—</div>
+      </div>
+    </div>
+
+    <div class="total-row">
+      <span class="total-label">Total Ongkos Kirim</span>
+      <span class="total-value" id="totalValue">—</span>
+    </div>
+  </div>
+
+  <footer>
+    Jarak dihitung berdasarkan data rute Google Maps.<br/>
+    Hasil estimasi — dapat berbeda dengan kondisi jalan aktual.
+  </footer>
+
+  <script>
+    // ─── Utilities ────────────────────────────────────────────────
+    const fmt = n => "Rp " + Math.round(n).toLocaleString("id-ID");
+
+    function showError(msg) {
+      const b = document.getElementById("errorBox");
+      b.textContent = msg;
+      b.style.display = "block";
+    }
+    function hideError() { document.getElementById("errorBox").style.display = "none"; }
+
+    function setLoading(on) {
+      const btn = document.getElementById("calcBtn");
+      document.getElementById("spinner").style.display = on ? "block" : "none";
+      document.getElementById("btnIcon").style.display = on ? "none" : "block";
+      btn.disabled = on;
+    }
+
+    function showResult(km, rate, subtitle, info) {
+      const total = km * rate;
+      document.getElementById("distValue").textContent = km.toFixed(2) + " km";
+      document.getElementById("rateValue").textContent = fmt(rate);
+      document.getElementById("totalValue").textContent = fmt(total);
+      document.getElementById("resultSub").textContent = subtitle || "Rute berhasil diproses";
+
+      const pill = document.getElementById("infoPill");
+      if (info) {
+        document.getElementById("infoPillText").textContent = info;
+        pill.style.display = "flex";
+      } else {
+        pill.style.display = "none";
+      }
+      document.getElementById("resultCard").style.display = "block";
+    }
+
+    // ─── Haversine (garis lurus, km) ──────────────────────────────
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371, rad = Math.PI / 180;
+      const dLat = (lat2 - lat1) * rad, dLon = (lon2 - lon1) * rad;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // ─── URL parsers ───────────────────────────────────────────────
+    // Ekstrak semua pasangan koordinat dari teks URL
+    function extractAllCoords(text) {
+      const re = /(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/g;
+      const results = [];
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)
+          results.push({ lat, lng });
+      }
+      return results;
+    }
+
+    // Format: /dir/orig/dest dengan nama atau coords
+    function extractDirCoords(url) {
+      // /dir/lat,lng/lat,lng
+      const m = url.match(/\/dir\/(-?\d+\.?\d*),(-?\d+\.?\d*)\/(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (m) return {
+        origin: { lat: +m[1], lng: +m[2] },
+        dest: { lat: +m[3], lng: +m[4] }
+      };
+      return null;
+    }
+
+    // @lat,lng,zoom atau !3d !4d
+    function extractSingleCoord(url) {
+      let m;
+      m = url.match(/@(-?\d+\.?\d+),(-?\d+\.?\d+)/);
+      if (m) return { lat: +m[1], lng: +m[2] };
+      m = url.match(/!3d(-?\d+\.?\d+)!4d(-?\d+\.?\d+)/);
+      if (m) return { lat: +m[1], lng: +m[2] };
+      return null;
+    }
+
+    // Cari pasangan (origin, dest) dari waypoints dalam URL yang sudah di-expand
+    function extractWaypoints(text) {
+      // !2m... patterns in place data
+      const coords = extractAllCoords(text);
+      // Filter out unlikely coords (NaN, zeros, etc.)
+      const valid = coords.filter(c => !(c.lat === 0 && c.lng === 0));
+      if (valid.length >= 2) {
+        return { origin: valid[0], dest: valid[valid.length - 1] };
+      }
+      return null;
+    }
+
+    // ─── Resolve short URL via CORS proxy ─────────────────────────
+    async function resolveViaProxy(url) {
+      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error("Proxy error " + res.status);
+      return res.json(); // { contents, status: { url } }
+    }
+
+    // ─── Main calculate ────────────────────────────────────────────
+    async function calculate() {
+      hideError();
+      document.getElementById("resultCard").style.display = "none";
+      document.getElementById("manualSection").style.display = "none";
+
+      const rawLink = document.getElementById("mapsLink").value.trim();
+      const rate    = parseFloat(document.getElementById("ratePerKm").value);
+
+      if (!rawLink) { showError("Masukkan link Google Maps terlebih dahulu."); return; }
+      if (!/google|goo\.gl|maps\.app/i.test(rawLink)) {
+        showError("Link tidak dikenali. Pastikan menggunakan link dari Google Maps."); return;
+      }
+      if (!rate || rate <= 0) { showError("Masukkan tarif per kilometer yang valid."); return; }
+
+      setLoading(true);
+
+      try {
+        let km = null;
+        let info = "";
+        let subtitle = "Rute berhasil diproses";
+
+        // ── Step 1: coba parse URL langsung ──
+        const dir = extractDirCoords(rawLink);
+        if (dir) {
+          const straight = haversine(dir.origin.lat, dir.origin.lng, dir.dest.lat, dir.dest.lng);
+          km = straight * 1.3;
+          info = "Jarak estimasi jalan (faktor koreksi ×1.3 dari garis lurus antar koordinat).";
+          subtitle = "Rute dari koordinat URL";
+        }
+
+        // ── Step 2: resolve via proxy ──
+        if (!km) {
+          let resolved;
+          try {
+            const data = await resolveViaProxy(rawLink);
+            resolved = data;
+          } catch (e) {
+            // proxy gagal, lanjut fallback
+          }
+
+          if (resolved) {
+            // Final URL dari proxy
+            const finalUrl = (resolved.status && resolved.status.url) || "";
+            const body     = resolved.contents || "";
+
+            // Coba parse coords dari final URL
+            if (finalUrl) {
+              const d2 = extractDirCoords(finalUrl);
+              if (d2) {
+                km = haversine(d2.origin.lat, d2.origin.lng, d2.dest.lat, d2.dest.lng) * 1.3;
+                info = "Estimasi jarak jalan (×1.3 dari garis lurus).";
+                subtitle = "Rute dari URL yang di-resolve";
+              }
+              if (!km) {
+                const wp = extractWaypoints(finalUrl);
+                if (wp) {
+                  km = haversine(wp.origin.lat, wp.origin.lng, wp.dest.lat, wp.dest.lng) * 1.3;
+                  info = "Estimasi dari waypoint pertama & terakhir (×1.3).";
+                  subtitle = "Rute dari data waypoint";
+                }
+              }
+            }
+
+            // Coba parse dari body HTML
+            if (!km && body) {
+              // Cari jarak eksplisit dalam teks, e.g. "5.3 km" atau "5,3 km"
+              const distRe = /\b(\d{1,4}[.,]\d{1,2})\s*km\b/gi;
+              const matches = [...body.matchAll(distRe)];
+              // Ambil nilai terbesar yang masuk akal (kemungkinan jarak rute, bukan skala peta)
+              const vals = matches.map(m => parseFloat(m[1].replace(",", ".")))
+                                  .filter(v => v > 0.1 && v < 5000)
+                                  .sort((a,b) => b-a);
+              if (vals.length) {
+                km = vals[0];
+                info = "Jarak diambil dari data halaman Google Maps.";
+                subtitle = "Jarak rute dari Google Maps";
+              }
+
+              // Fallback: coords dari body
+              if (!km) {
+                const wp2 = extractWaypoints(body);
+                if (wp2) {
+                  km = haversine(wp2.origin.lat, wp2.origin.lng, wp2.dest.lat, wp2.dest.lng) * 1.3;
+                  info = "Estimasi dari koordinat dalam halaman (×1.3).";
+                  subtitle = "Rute dari data halaman";
+                }
+              }
+            }
+          }
+        }
+
+        // ── Step 3: fallback manual ──
+        if (!km) {
+          showError(
+            "Tidak dapat mengekstrak jarak otomatis dari link ini.\n\n" +
+            "Hal ini biasanya terjadi karena link adalah lokasi tunggal (bukan rute/directions).\n\n" +
+            "Solusi: Di Google Maps, klik \"Rute\" → masukkan titik asal & tujuan → salin link baru dari browser.\n\n" +
+            "Atau gunakan input manual di bawah."
+          );
+          showManualFallback(rate);
+          setLoading(false);
+          return;
+        }
+
+        showResult(km, rate, subtitle, info);
+
+      } catch (e) {
+        showError("Terjadi kesalahan: " + e.message + "\n\nCoba gunakan input manual di bawah.");
+        showManualFallback(parseFloat(document.getElementById("ratePerKm").value));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ─── Manual fallback UI ────────────────────────────────────────
+    function showManualFallback(rate) {
+      const sec = document.getElementById("manualSection");
+      sec.style.display = "block";
+      if (sec.innerHTML.trim()) return; // sudah ada
+      sec.innerHTML = `
+        <div class="divider" style="margin-top:14px"></div>
+        <p class="section-label" style="margin-bottom:12px">Input Manual</p>
+        <div class="field">
+          <label>Jarak tempuh (km)</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h18M3 6h18M3 18h12"/>
+              </svg>
+            </span>
+            <input type="number" id="manualKm" placeholder="Contoh: 12.5" min="0.1" step="0.1"/>
+          </div>
+          <p class="hint">Lihat jarak di Google Maps, lalu ketik di sini (dalam kilometer).</p>
+        </div>
+        <button class="manual-btn" onclick="calcManual()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="12" y1="9" x2="12" y2="15"/>
+          </svg>
+          Hitung dengan jarak manual
+        </button>
+      `;
+    }
+
+    function calcManual() {
+      hideError();
+      const km   = parseFloat(document.getElementById("manualKm")?.value);
+      const rate = parseFloat(document.getElementById("ratePerKm").value);
+      if (!km || km <= 0) { showError("Masukkan jarak yang valid."); return; }
+      showResult(km, rate, "Input jarak manual", "");
+    }
+
+    // ─── Enter key shortcut ────────────────────────────────────────
+    document.getElementById("mapsLink").addEventListener("keydown", e => {
+      if (e.key === "Enter") calculate();
+    });
+  </script>
+</body>
+</html>
