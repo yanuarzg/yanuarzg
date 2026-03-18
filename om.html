@@ -825,20 +825,21 @@ function extractDataCoords(url) {
 
 /**
  * Khusus URL /maps/dir/ — ekstrak SEMUA waypoint dengan koordinat presisi.
- * Strategi:
- *   1. Titik pertama: dari path /dir/lat,lng/ (koordinat langsung di URL)
- *   2. Titik berikutnya: dari data= block (!1d!2d pairs) — ini koordinat tepat
- *      yang dipakai Google, lebih akurat dari nama tempat
- *   3. Fallback untuk titik tanpa koordinat: nama tempat dari path
+ * Prioritas sumber koordinat per waypoint:
+ *   1. Koordinat langsung di path (/dir/lat,lng/)
+ *   2. Koordinat dari blok data= (!1d<lng>!2d<lat>) — paling akurat untuk tujuan
+ *   3. Koordinat @viewport — fallback jika data= tidak ada (rute 2-titik)
+ *   4. Nama tempat → Nominatim (last resort)
  */
 function extractDirWaypoints(url) {
-  const results = [];
-
-  // Ambil bagian path antara /dir/ dan /@
-  const dirMatch = url.match(/\/maps\/dir\/(.+?)(?:\/[@]|\/data=|$)/);
+  // Ambil segmen path antara /dir/ dan /@viewport
+  const dirMatch = url.match(/\/maps\/dir\/(.+?)(?:\/@|$)/);
   if (!dirMatch) return [];
 
-  const pathParts = dirMatch[1].split('/').filter(p => p && p.trim());
+  const rawPath   = dirMatch[1];
+  // Potong sebelum /data= jika ada
+  const cleanPath = rawPath.split(/\/data=/)[0];
+  const pathParts = cleanPath.split('/').filter(p => p && p.trim());
 
   // Parse setiap segmen path
   const pathWaypoints = pathParts.map(p => {
@@ -854,24 +855,50 @@ function extractDirWaypoints(url) {
     return null;
   }).filter(Boolean);
 
-  // Ambil koordinat presisi dari blok data= (lebih akurat dari nama tempat)
+  // Koordinat presisi dari blok data= (tersedia di URL panjang)
   const dataCoords = extractDataCoords(url);
 
-  // Gabungkan: untuk setiap waypoint di path,
-  // jika punya tipe 'name' maka ganti dengan koordinat dari data= jika tersedia
+  // Koordinat @viewport — untuk URL 2-titik tanpa data=,
+  // viewport center sering merupakan koordinat tujuan atau titik tengah rute
+  const viewportMatch = url.match(/\/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  const viewportCoords = viewportMatch ? {
+    lat: parseFloat(viewportMatch[1]),
+    lng: parseFloat(viewportMatch[2])
+  } : null;
+
+  // Gabungkan
+  const results = [];
   let dataIdx = 0;
-  for (const wp of pathWaypoints) {
+
+  for (let i = 0; i < pathWaypoints.length; i++) {
+    const wp = pathWaypoints[i];
+
     if (wp.type === 'coords') {
+      // Koordinat langsung sudah akurat — pakai apa adanya
       results.push(wp);
-      // data= coords urutan pertama biasanya sesuai waypoint pertama — skip
-      // (titik asal dari path sudah akurat)
+
     } else {
-      // Waypoint nama → cari koordinat di data=
+      // Waypoint nama → ganti dengan koordinat jika tersedia
+
+      // Prioritas 1: data= block
       if (dataIdx < dataCoords.length) {
         results.push({ type: 'coords', ...dataCoords[dataIdx] });
         dataIdx++;
+
+      // Prioritas 2: viewport coords (hanya untuk waypoint TERAKHIR di rute 2-titik)
+      } else if (
+        viewportCoords &&
+        i === pathWaypoints.length - 1 &&
+        pathWaypoints.length === 2
+      ) {
+        // CATATAN: viewport untuk rute 2-titik biasanya bukan tepat di tujuan,
+        // tapi masih jauh lebih baik dari geocoding nama generik.
+        // Kita tandai sebagai 'viewport' agar applyDirWaypoints bisa log-nya
+        results.push({ type: 'coords', ...viewportCoords, source: 'viewport' });
+
       } else {
-        results.push(wp); // fallback tetap pakai nama
+        // Last resort: nama tempat → Nominatim
+        results.push(wp);
       }
     }
   }
@@ -893,50 +920,65 @@ function extractPlaceNameFromUrl(url) {
 
 /**
  * Unshorten URL goo.gl menggunakan beberapa proxy CORS.
- * Semua proxy menggunakan GET biasa (bukan HEAD) karena lebih reliable.
+ * Mencari URL Google Maps terpanjang (termasuk data=) di HTML respons.
  * Mengembalikan URL panjang atau null jika semua gagal.
  */
 async function unshortenUrl(shortUrl) {
   const encoded = encodeURIComponent(shortUrl);
 
-  // Proxy #1: corsproxy.io — fetch halaman HTML lalu cari meta redirect
+  // Helper: cari URL Google Maps terpanjang di teks HTML
+  function extractLongestMapsUrl(text) {
+    // Cari semua URL google maps di HTML (termasuk yang di dalam script/meta)
+    const candidates = [];
+
+    // Pattern 1: dalam atribut href/content
+    const re1 = /(?:href|content|url)=["']([^"']*google\.com\/maps[^"']*)/gi;
+    let m;
+    while ((m = re1.exec(text)) !== null) candidates.push(decodeURIComponent(m[1]));
+
+    // Pattern 2: dalam teks/script (tidak dalam atribut)
+    const re2 = /https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\)]+/g;
+    while ((m = re2.exec(text)) !== null) candidates.push(m[0]);
+
+    if (!candidates.length) return null;
+
+    // Kembalikan yang terpanjang (kemungkinan besar punya data=)
+    return candidates.reduce((a, b) => a.length >= b.length ? a : b);
+  }
+
+  // Proxy #1: corsproxy.io
   try {
     const res = await fetch(`https://corsproxy.io/?${encoded}`, {
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(7000)
     });
     if (res.ok) {
       const text = await res.text();
-      // Cari canonical URL atau og:url di HTML Google Maps
-      const canonical = text.match(/rel=.canonical. href=.([^"']+google\.com\/maps[^"']*)/)?.[1]
-                     || text.match(/"https:\/\/www\.google\.com\/maps\/[^"]+"/)?.[0]?.replace(/"/g,'');
-      if (canonical && isGoogleMapsUrl(canonical)) return canonical;
-      // Cari di script tag
-      const scriptCoords = text.match(/google\.com\/maps[^\s"'\\]*/)?.[0];
-      if (scriptCoords) return 'https://' + scriptCoords;
+      const best = extractLongestMapsUrl(text);
+      if (best && isGoogleMapsUrl(best)) return best;
     }
-  } catch { /* coba proxy berikutnya */ }
+  } catch { /* lanjut ke proxy berikutnya */ }
 
   // Proxy #2: api.codetabs.com
   try {
     const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encoded}`, {
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(7000)
     });
     if (res.ok) {
       const text = await res.text();
-      const m = text.match(/https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\]+/);
-      if (m) return m[0];
+      const best = extractLongestMapsUrl(text);
+      if (best && isGoogleMapsUrl(best)) return best;
     }
-  } catch { /* coba proxy berikutnya */ }
+  } catch { /* lanjut ke proxy berikutnya */ }
 
-  // Proxy #3: htmlpreview / thingproxy
+  // Proxy #3: thingproxy
   try {
     const res = await fetch(`https://thingproxy.freeboard.io/fetch/${encoded}`, {
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(7000)
     });
     if (res.ok) {
       const text = await res.text();
-      const m = text.match(/https?:\/\/(?:www\.)?google\.com\/maps\/[^\s"'<>\\]+/);
-      if (m) return m[0];
+      const best = extractLongestMapsUrl(text);
+      if (best && isGoogleMapsUrl(best)) return best;
     }
   } catch { /* semua gagal */ }
 
@@ -1018,6 +1060,9 @@ async function applyDirWaypoints(startIdx, url) {
   const tasks = waypoints.map(async (wp, i) => {
     if (wp.type === 'coords') {
       await applyCoords(i, wp.lat, wp.lng);
+      if (wp.source === 'viewport') {
+        showToast('⚠️ Titik tujuan dari perkiraan viewport — geser marker jika perlu');
+      }
     } else {
       await resolveByName(i, wp.name);
     }
