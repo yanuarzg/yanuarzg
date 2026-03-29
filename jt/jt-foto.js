@@ -1,5 +1,6 @@
 (function () {
 
+ if (document.getElementById('lb-gallery')) {
   const images = document.querySelectorAll('.post-body img');
   if (!images.length) return;
 
@@ -111,4 +112,5 @@
     if (endX - startX > 50) prev();
   });
 
+ }
 })();
