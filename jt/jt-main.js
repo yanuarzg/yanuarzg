@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           
           if (!a) {
-            a = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23ddd' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-family='Arial'%3ENo Image%3C/text%3E%3C/svg%3E";
+            a = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjOcKGhyphenhyphenvwYzqkKXFe56WXVJjVA8uEP2VQjStHfCb42EndnkvtBqaaWHfpuJjoPqFXeIowa6-PkCCIopD_3GW-wXz1GeGJGxCDPgXMZW7hhEMEdZ03tWODIbUs9Jr-Zm8WnXduWUq2cFSyuylQioMl5pxMzkJ_u49FZsTBBymOzAUY3V0qfsVoYgG8Pi-U6/rw/JTI-Hi-Res.jpg.jpeg";
           }
           
           a = updateImageUrls(a); 
