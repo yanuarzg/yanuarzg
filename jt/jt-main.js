@@ -123,6 +123,9 @@ const loadWordpressPosts = async () => {
   const wpElements = document.querySelectorAll(".recent-wp");
   if (wpElements.length === 0) return;
 
+  // Menggunakan CORS Proxy untuk menghindari error "Blocked by CORS"
+  const proxy = "https://api.allorigins.win/raw?url=";
+
   for (const el of wpElements) {
     let rawUrl = el.dataset.url ? el.dataset.url.replace(/\/$/, "") : "";
     const items = parseInt(el.dataset.items) || 4;
@@ -136,47 +139,55 @@ const loadWordpressPosts = async () => {
       let categorySlug = "";
       let categoryId = "";
 
-      // 1. Logika Deteksi: Apakah ini URL kategori atau Root?
+      // 1. Deteksi apakah URL mengandung kategori
       if (rawUrl.includes("/category/")) {
         const parts = rawUrl.split("/category/");
-        baseUrl = parts[0]; // Ambil domain utama
-        categorySlug = parts[1].split("/")[0]; // Ambil slug kategori (misal: 'publikasi')
+        baseUrl = parts[0];
+        categorySlug = parts[1].split("/")[0];
       } else {
-        baseUrl = rawUrl; // Root domain
+        baseUrl = rawUrl;
       }
 
-      // 2. Jika ada slug kategori, cari ID-nya terlebih dahulu
+      // 2. Jika ada kategori, cari ID-nya via Proxy
       if (categorySlug) {
-        const catRes = await fetch(`${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`);
+        const catApi = `${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`;
+        const catRes = await fetch(proxy + encodeURIComponent(catApi));
         const catData = await catRes.json();
         if (catData.length > 0) {
           categoryId = catData[0].id;
         }
       }
 
-      // 3. Bangun URL API Posts
-      let apiUrl = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=50`;
-      if (categoryId) apiUrl += `&categories=${categoryId}`;
+      // 3. Ambil data Postingan via Proxy
+      let postApi = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=50`;
+      if (categoryId) postApi += `&categories=${categoryId}`;
 
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error("Gagal mengambil data");
+      const response = await fetch(proxy + encodeURIComponent(postApi));
+      if (!response.ok) throw new Error("Gagal mengambil data dari server.");
+      
       const posts = await response.json();
 
       if (!posts || posts.length === 0 || posts.code === "rest_no_route") {
-        el.innerHTML = "No Posts Found.";
+        el.innerHTML = "<div class='no-posts'>No Posts Found.</div>";
         continue;
       }
 
-      // 4. Slicing berdasarkan data-index
+      // 4. Potong data berdasarkan index (startIndex) dan jumlah (items)
       const toDisplay = posts.slice(startIndex, startIndex + items);
 
       // 5. Render ke Template
       const html = toDisplay.map(post => {
-        const title = post.title.rendered;
-        const link = post.link;
-        const thumb = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || "https://via.placeholder.com/300x200?text=No+Image";
+        const title = post.title?.rendered || "No Title";
+        const link = post.link || "#";
+        
+        // Ambil Thumbnail (Featured Image)
+        const thumb = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
+                      "https://via.placeholder.com/300x200?text=No+Image";
+        
+        // Ambil Nama Kategori
         const labels = post._embedded?.['wp:term']?.[0]?.map(term => term.name) || [];
         
+        // Format Tanggal
         const dateObj = new Date(post.date);
         const dateFormatted = dateObj.toLocaleDateString('id-ID', {
           day: 'numeric',
@@ -184,26 +195,35 @@ const loadWordpressPosts = async () => {
           year: 'numeric'
         });
 
-        return createPostTemplate({
-          title,
-          link,
-          thumb,
-          date: dateFormatted,
-          desc: post.excerpt.rendered.replace(/<[^>]*>?/gm, '').substring(0, 100) + "...",
-          labels,
-          style,
-          hasDesc: typeof yzRp !== 'undefined' ? yzRp.desc : true
-        });
+        // Pastikan fungsi createPostTemplate tersedia di script utama Anda
+        if (typeof createPostTemplate === "function") {
+          return createPostTemplate({
+            title,
+            link,
+            thumb,
+            date: dateFormatted,
+            desc: post.excerpt?.rendered ? post.excerpt.rendered.replace(/<[^>]*>?/gm, '').substring(0, 100) + "..." : "",
+            labels,
+            style,
+            hasDesc: true
+          });
+        } else {
+          // Fallback jika template function tidak ditemukan
+          return `<div class="post-item">
+                    <a href="${link}"><h4>${title}</h4></a>
+                    <p>${dateFormatted}</p>
+                  </div>`;
+        }
       }).join("");
 
       el.innerHTML = html;
 
     } catch (error) {
       console.error("WP API Error:", error);
-      el.innerHTML = "Failed to load posts.";
+      el.innerHTML = "<div class='error-msg'>Gagal memuat postingan (CORS atau Server Error).</div>";
     }
   }
 };
 
-// Jalankan fungsi
+// Jalankan fungsi setelah halaman selesai dimuat
 document.addEventListener("DOMContentLoaded", loadWordpressPosts);
