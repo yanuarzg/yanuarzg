@@ -123,8 +123,8 @@ const loadWordpressPosts = async () => {
   const wpElements = document.querySelectorAll(".recent-wp");
   if (wpElements.length === 0) return;
 
-  // GANTI DENGAN URL WEB APP BARU ANDA
-  const googleBridge = "https://script.google.com/macros/s/AKfycbz7G4cgqvdF5GXcgji6xMHEEI-oYnULHTa40ZUy6uvsK9IEE4WsBoYExMU1vB7r5WOR/exec?url=";
+  // MASUKKAN URL WEB APP BARU ANDA DI SINI
+  const googleBridge = "https://script.google.com/macros/s/AKfycbw0l69d4mv0u51JCHYx_abUQyYHG90GowNZZ_fCgTsYk5pQnzhCnjWhny6Wa-aTz9K4/exec?url=";
 
   for (const el of wpElements) {
     let rawUrl = el.dataset.url ? el.dataset.url.replace(/\/$/, "") : "";
@@ -144,19 +144,19 @@ const loadWordpressPosts = async () => {
         categorySlug = parts[1].split("/")[0];
       }
 
-      // Helper untuk mengambil data JSON dengan aman
       const fetchJson = async (targetUrl) => {
         const res = await fetch(googleBridge + encodeURIComponent(targetUrl));
         const text = await res.text();
         try {
-          return JSON.parse(text); // Coba parse secara manual untuk deteksi error
+          // Membersihkan teks jika ada spasi atau karakter aneh di awal/akhir
+          return JSON.parse(text.trim()); 
         } catch (e) {
-          console.error("Format bukan JSON. Isi respons:", text.substring(0, 100));
+          console.error("Gagal Parse JSON. Cek URL Deployment Anda.");
           return null;
         }
       };
 
-      // 1. Cari ID Kategori
+      // 1. Ambil ID Kategori
       if (categorySlug) {
         const catData = await fetchJson(`${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`);
         if (catData && catData.length > 0) categoryId = catData[0].id;
@@ -169,8 +169,8 @@ const loadWordpressPosts = async () => {
 
       const posts = await fetchJson(postApi);
 
-      if (!posts || !Array.isArray(posts) || posts.length === 0) {
-        el.innerHTML = "Postingan tidak ditemukan.";
+      if (!posts || !Array.isArray(posts)) {
+        el.innerHTML = "Gagal memuat data atau format salah.";
         continue;
       }
 
@@ -196,7 +196,6 @@ const loadWordpressPosts = async () => {
 
     } catch (error) {
       console.error("WP API Error:", error);
-      el.innerHTML = "Gagal memuat data.";
     }
   }
 };
