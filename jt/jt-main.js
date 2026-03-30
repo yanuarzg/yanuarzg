@@ -123,8 +123,12 @@ const loadWordpressPosts = async () => {
   const wpElements = document.querySelectorAll(".recent-wp");
   if (wpElements.length === 0) return;
 
-  // Menggunakan CORS Proxy untuk menghindari error "Blocked by CORS"
-  const proxy = "https://api.allorigins.win/raw?url=";
+  // Daftar Proxy untuk fallback jika salah satu timeout
+  const proxies = [
+    "https://api.allorigins.win/raw?url=",
+    "https://corsproxy.io/?",
+    "https://thingproxy.freeboard.io/fetch/"
+  ];
 
   for (const el of wpElements) {
     let rawUrl = el.dataset.url ? el.dataset.url.replace(/\/$/, "") : "";
@@ -134,96 +138,84 @@ const loadWordpressPosts = async () => {
 
     if (!rawUrl) continue;
 
+    // Optimasi: Hanya minta data sebanyak yang dibutuhkan (index + items)
+    // Ini jauh lebih cepat daripada meminta 50 data sekaligus
+    const totalNeeded = startIndex + items;
+
     try {
-      let baseUrl = "";
+      let baseUrl = rawUrl;
       let categorySlug = "";
       let categoryId = "";
 
-      // 1. Deteksi apakah URL mengandung kategori
       if (rawUrl.includes("/category/")) {
         const parts = rawUrl.split("/category/");
         baseUrl = parts[0];
         categorySlug = parts[1].split("/")[0];
-      } else {
-        baseUrl = rawUrl;
       }
 
-      // 2. Jika ada kategori, cari ID-nya via Proxy
-      if (categorySlug) {
-        const catApi = `${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`;
-        const catRes = await fetch(proxy + encodeURIComponent(catApi));
-        const catData = await catRes.json();
-        if (catData.length > 0) {
-          categoryId = catData[0].id;
+      // Fungsi Helper untuk Fetch dengan Timeout & Proxy Fallback
+      const fetchWithProxy = async (targetUrl) => {
+        let lastError;
+        for (let proxy of proxies) {
+          try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 8000); // Timeout 8 detik
+
+            const res = await fetch(proxy + encodeURIComponent(targetUrl), { signal: controller.signal });
+            clearTimeout(id);
+            if (res.ok) return await res.json();
+          } catch (err) {
+            lastError = err;
+            console.warn(`Proxy ${proxy} gagal, mencoba lainnya...`);
+          }
         }
+        throw lastError;
+      };
+
+      // 1. Cari Category ID jika diperlukan
+      if (categorySlug) {
+        const catData = await fetchWithProxy(`${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`);
+        if (catData && catData.length > 0) categoryId = catData[0].id;
       }
 
-      // 3. Ambil data Postingan via Proxy
-      let postApi = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=50`;
+      // 2. Ambil Postingan (Hanya sebanyak totalNeeded)
+      let postApi = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=${totalNeeded}`;
       if (categoryId) postApi += `&categories=${categoryId}`;
 
-      const response = await fetch(proxy + encodeURIComponent(postApi));
-      if (!response.ok) throw new Error("Gagal mengambil data dari server.");
-      
-      const posts = await response.json();
+      const posts = await fetchWithProxy(postApi);
 
-      if (!posts || posts.length === 0 || posts.code === "rest_no_route") {
-        el.innerHTML = "<div class='no-posts'>No Posts Found.</div>";
+      if (!posts || posts.length === 0) {
+        el.innerHTML = "No Posts Found.";
         continue;
       }
 
-      // 4. Potong data berdasarkan index (startIndex) dan jumlah (items)
-      const toDisplay = posts.slice(startIndex, startIndex + items);
+      // 3. Slicing
+      const toDisplay = posts.slice(startIndex, totalNeeded);
 
-      // 5. Render ke Template
+      // 4. Render
       const html = toDisplay.map(post => {
         const title = post.title?.rendered || "No Title";
         const link = post.link || "#";
-        
-        // Ambil Thumbnail (Featured Image)
-        const thumb = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
-                      "https://via.placeholder.com/300x200?text=No+Image";
-        
-        // Ambil Nama Kategori
+        const thumb = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || "https://via.placeholder.com/300x200?text=No+Image";
         const labels = post._embedded?.['wp:term']?.[0]?.map(term => term.name) || [];
-        
-        // Format Tanggal
         const dateObj = new Date(post.date);
-        const dateFormatted = dateObj.toLocaleDateString('id-ID', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        });
+        const dateFormatted = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
-        // Pastikan fungsi createPostTemplate tersedia di script utama Anda
-        if (typeof createPostTemplate === "function") {
-          return createPostTemplate({
-            title,
-            link,
-            thumb,
-            date: dateFormatted,
-            desc: post.excerpt?.rendered ? post.excerpt.rendered.replace(/<[^>]*>?/gm, '').substring(0, 100) + "..." : "",
-            labels,
-            style,
-            hasDesc: true
-          });
-        } else {
-          // Fallback jika template function tidak ditemukan
-          return `<div class="post-item">
-                    <a href="${link}"><h4>${title}</h4></a>
-                    <p>${dateFormatted}</p>
-                  </div>`;
-        }
+        return createPostTemplate({
+          title, link, thumb,
+          date: dateFormatted,
+          desc: post.excerpt?.rendered ? post.excerpt.rendered.replace(/<[^>]*>?/gm, '').substring(0, 100) + "..." : "",
+          labels, style, hasDesc: true
+        });
       }).join("");
 
       el.innerHTML = html;
 
     } catch (error) {
       console.error("WP API Error:", error);
-      el.innerHTML = "<div class='error-msg'>Gagal memuat postingan (CORS atau Server Error).</div>";
+      el.innerHTML = "<div class='error-msg'>Server lambat merespons. Silakan segarkan halaman.</div>";
     }
   }
 };
 
-// Jalankan fungsi setelah halaman selesai dimuat
 document.addEventListener("DOMContentLoaded", loadWordpressPosts);
