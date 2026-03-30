@@ -123,24 +123,15 @@ const loadWordpressPosts = async () => {
   const wpElements = document.querySelectorAll(".recent-wp");
   if (wpElements.length === 0) return;
 
-  // Daftar Proxy untuk fallback jika salah satu timeout
-  const proxies = [
-    "https://api.allorigins.win/raw?url=",
-    "https://corsproxy.io/?",
-    "https://thingproxy.freeboard.io/fetch/"
-  ];
+  // GANTI URL DI BAWAH INI DENGAN URL WEB APP ANDA DARI LANGKAH 1
+  const googleBridge = "https://script.google.com/macros/s/AKfycbz7G4cgqvdF5GXcgji6xMHEEI-oYnULHTa40ZUy6uvsK9IEE4WsBoYExMU1vB7r5WOR/exec?url=";
 
   for (const el of wpElements) {
     let rawUrl = el.dataset.url ? el.dataset.url.replace(/\/$/, "") : "";
     const items = parseInt(el.dataset.items) || 4;
     const startIndex = parseInt(el.dataset.index) || 0;
     const style = el.dataset.style || "";
-
     if (!rawUrl) continue;
-
-    // Optimasi: Hanya minta data sebanyak yang dibutuhkan (index + items)
-    // Ini jauh lebih cepat daripada meminta 50 data sekaligus
-    const totalNeeded = startIndex + items;
 
     try {
       let baseUrl = rawUrl;
@@ -153,46 +144,29 @@ const loadWordpressPosts = async () => {
         categorySlug = parts[1].split("/")[0];
       }
 
-      // Fungsi Helper untuk Fetch dengan Timeout & Proxy Fallback
-      const fetchWithProxy = async (targetUrl) => {
-        let lastError;
-        for (let proxy of proxies) {
-          try {
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 8000); // Timeout 8 detik
-
-            const res = await fetch(proxy + encodeURIComponent(targetUrl), { signal: controller.signal });
-            clearTimeout(id);
-            if (res.ok) return await res.json();
-          } catch (err) {
-            lastError = err;
-            console.warn(`Proxy ${proxy} gagal, mencoba lainnya...`);
-          }
-        }
-        throw lastError;
-      };
-
-      // 1. Cari Category ID jika diperlukan
+      // 1. Cari ID Kategori via Google Bridge
       if (categorySlug) {
-        const catData = await fetchWithProxy(`${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`);
+        const catApi = `${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`;
+        const catRes = await fetch(googleBridge + encodeURIComponent(catApi));
+        const catData = await catRes.json();
         if (catData && catData.length > 0) categoryId = catData[0].id;
       }
 
-      // 2. Ambil Postingan (Hanya sebanyak totalNeeded)
+      // 2. Ambil Postingan via Google Bridge
+      const totalNeeded = startIndex + items;
       let postApi = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=${totalNeeded}`;
       if (categoryId) postApi += `&categories=${categoryId}`;
 
-      const posts = await fetchWithProxy(postApi);
+      const response = await fetch(googleBridge + encodeURIComponent(postApi));
+      const posts = await response.json();
 
-      if (!posts || posts.length === 0) {
-        el.innerHTML = "No Posts Found.";
+      if (!posts || posts.length === 0 || posts.error) {
+        el.innerHTML = "Postingan tidak ditemukan atau akses ditolak.";
         continue;
       }
 
-      // 3. Slicing
+      // 3. Slicing & Render
       const toDisplay = posts.slice(startIndex, totalNeeded);
-
-      // 4. Render
       const html = toDisplay.map(post => {
         const title = post.title?.rendered || "No Title";
         const link = post.link || "#";
@@ -213,7 +187,7 @@ const loadWordpressPosts = async () => {
 
     } catch (error) {
       console.error("WP API Error:", error);
-      el.innerHTML = "<div class='error-msg'>Server lambat merespons. Silakan segarkan halaman.</div>";
+      el.innerHTML = "Gagal memuat data dari WordPress.";
     }
   }
 };
