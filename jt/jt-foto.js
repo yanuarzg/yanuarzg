@@ -72,7 +72,7 @@
 
    const tutorial = document.getElementById('swipe-tutorial');
    if (!tutorialShown && tutorial) {
-     tutorial.style.opacity = 1; 
+     tutorial.style.display = 'flex'; 
      setTimeout(() => {
        tutorial.remove();
        tutorialShown = true; 
