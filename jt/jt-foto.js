@@ -4,6 +4,8 @@
   const images = document.querySelectorAll('.post-body img');
   if (!images.length) return;
 
+  let tutorialShown = false; 
+
   const gallery = document.getElementById('lb-gallery');
   const lightbox = document.getElementById('lightbox');
   const lbImg = document.getElementById('lightbox-img');
@@ -62,16 +64,25 @@
     });
   });
 
-  function show() {
-    lightbox.style.display = 'flex';
-    lbImg.src = data[index].src;
-    lbCaption.textContent = data[index].caption;
-    lbIndicator.textContent = (index + 1) + ' dari ' + data.length;
+ function show() {
+   lightbox.style.display = 'flex';
+   lbImg.src = data[index].src;
+   lbCaption.textContent = data[index].caption;
+   lbIndicator.textContent = (index + 1) + ' dari ' + data.length;
 
-    requestAnimationFrame(() => {
-      lightbox.classList.add('show-caption');
-    });
-  }
+   const tutorial = document.getElementById('swipe-tutorial');
+   if (!tutorialShown && tutorial) {
+     tutorial.style.display = 'flex'; 
+     setTimeout(() => {
+       tutorial.remove();
+       tutorialShown = true; 
+     }, 3000);
+   }
+
+   requestAnimationFrame(() => {
+     lightbox.classList.add('show-caption');
+   });
+ }
 
   function hide() {
     lightbox.style.display = 'none';
