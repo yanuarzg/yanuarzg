@@ -123,7 +123,7 @@ const loadWordpressPosts = async () => {
   const wpElements = document.querySelectorAll(".recent-wp");
   if (wpElements.length === 0) return;
 
-  // GANTI URL DI BAWAH INI DENGAN URL WEB APP ANDA DARI LANGKAH 1
+  // GANTI DENGAN URL WEB APP BARU ANDA
   const googleBridge = "https://script.google.com/macros/s/AKfycbz7G4cgqvdF5GXcgji6xMHEEI-oYnULHTa40ZUy6uvsK9IEE4WsBoYExMU1vB7r5WOR/exec?url=";
 
   for (const el of wpElements) {
@@ -144,24 +144,33 @@ const loadWordpressPosts = async () => {
         categorySlug = parts[1].split("/")[0];
       }
 
-      // 1. Cari ID Kategori via Google Bridge
+      // Helper untuk mengambil data JSON dengan aman
+      const fetchJson = async (targetUrl) => {
+        const res = await fetch(googleBridge + encodeURIComponent(targetUrl));
+        const text = await res.text();
+        try {
+          return JSON.parse(text); // Coba parse secara manual untuk deteksi error
+        } catch (e) {
+          console.error("Format bukan JSON. Isi respons:", text.substring(0, 100));
+          return null;
+        }
+      };
+
+      // 1. Cari ID Kategori
       if (categorySlug) {
-        const catApi = `${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`;
-        const catRes = await fetch(googleBridge + encodeURIComponent(catApi));
-        const catData = await catRes.json();
+        const catData = await fetchJson(`${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`);
         if (catData && catData.length > 0) categoryId = catData[0].id;
       }
 
-      // 2. Ambil Postingan via Google Bridge
+      // 2. Ambil Postingan
       const totalNeeded = startIndex + items;
       let postApi = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=${totalNeeded}`;
       if (categoryId) postApi += `&categories=${categoryId}`;
 
-      const response = await fetch(googleBridge + encodeURIComponent(postApi));
-      const posts = await response.json();
+      const posts = await fetchJson(postApi);
 
-      if (!posts || posts.length === 0 || posts.error) {
-        el.innerHTML = "Postingan tidak ditemukan atau akses ditolak.";
+      if (!posts || !Array.isArray(posts) || posts.length === 0) {
+        el.innerHTML = "Postingan tidak ditemukan.";
         continue;
       }
 
@@ -187,7 +196,7 @@ const loadWordpressPosts = async () => {
 
     } catch (error) {
       console.error("WP API Error:", error);
-      el.innerHTML = "Gagal memuat data dari WordPress.";
+      el.innerHTML = "Gagal memuat data.";
     }
   }
 };
