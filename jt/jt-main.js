@@ -118,3 +118,92 @@ if (window.innerWidth <= 768) {
   });
 
 }
+
+const loadWordpressPosts = async () => {
+  const wpElements = document.querySelectorAll(".recent-wp");
+  if (wpElements.length === 0) return;
+
+  for (const el of wpElements) {
+    let rawUrl = el.dataset.url ? el.dataset.url.replace(/\/$/, "") : "";
+    const items = parseInt(el.dataset.items) || 4;
+    const startIndex = parseInt(el.dataset.index) || 0;
+    const style = el.dataset.style || "";
+
+    if (!rawUrl) continue;
+
+    try {
+      let baseUrl = "";
+      let categorySlug = "";
+      let categoryId = "";
+
+      // 1. Logika Deteksi: Apakah ini URL kategori atau Root?
+      if (rawUrl.includes("/category/")) {
+        const parts = rawUrl.split("/category/");
+        baseUrl = parts[0]; // Ambil domain utama
+        categorySlug = parts[1].split("/")[0]; // Ambil slug kategori (misal: 'publikasi')
+      } else {
+        baseUrl = rawUrl; // Root domain
+      }
+
+      // 2. Jika ada slug kategori, cari ID-nya terlebih dahulu
+      if (categorySlug) {
+        const catRes = await fetch(`${baseUrl}/wp-json/wp/v2/categories?slug=${categorySlug}`);
+        const catData = await catRes.json();
+        if (catData.length > 0) {
+          categoryId = catData[0].id;
+        }
+      }
+
+      // 3. Bangun URL API Posts
+      let apiUrl = `${baseUrl}/wp-json/wp/v2/posts?_embed&per_page=50`;
+      if (categoryId) apiUrl += `&categories=${categoryId}`;
+
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Gagal mengambil data");
+      const posts = await response.json();
+
+      if (!posts || posts.length === 0 || posts.code === "rest_no_route") {
+        el.innerHTML = "No Posts Found.";
+        continue;
+      }
+
+      // 4. Slicing berdasarkan data-index
+      const toDisplay = posts.slice(startIndex, startIndex + items);
+
+      // 5. Render ke Template
+      const html = toDisplay.map(post => {
+        const title = post.title.rendered;
+        const link = post.link;
+        const thumb = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || "https://via.placeholder.com/300x200?text=No+Image";
+        const labels = post._embedded?.['wp:term']?.[0]?.map(term => term.name) || [];
+        
+        const dateObj = new Date(post.date);
+        const dateFormatted = dateObj.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+
+        return createPostTemplate({
+          title,
+          link,
+          thumb,
+          date: dateFormatted,
+          desc: post.excerpt.rendered.replace(/<[^>]*>?/gm, '').substring(0, 100) + "...",
+          labels,
+          style,
+          hasDesc: typeof yzRp !== 'undefined' ? yzRp.desc : true
+        });
+      }).join("");
+
+      el.innerHTML = html;
+
+    } catch (error) {
+      console.error("WP API Error:", error);
+      el.innerHTML = "Failed to load posts.";
+    }
+  }
+};
+
+// Jalankan fungsi
+document.addEventListener("DOMContentLoaded", loadWordpressPosts);
