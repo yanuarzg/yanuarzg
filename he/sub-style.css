@@ -11,6 +11,13 @@
     padding-inline: 20px;
 }
 
+.news-subdomain-title a {
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 17px;
+    text-transform: uppercase;
+}
+
 .recent-blg-multi.grid ul li img, .recent-blg-multi.grid ul li .post-img, .recent-wp-multi.grid ul li img, .recent-wp-multi.grid ul li .post-img, .recent-blg .post-img, .recent-wp .post-img, .recent-blg .post-img img, .recent-wp .post-img img, .recent-wp-multi ul li img, .recent-wp-multi ul li .post-img {
     max-width: unset;
 }
