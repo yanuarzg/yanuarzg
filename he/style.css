@@ -59,9 +59,12 @@ blockquote:after, .note:after, .success:after, .warning:after, .danger:after { c
 /* end yz */
 
 .centralized-banner > img {
-    max-width: 30%!important;
+    max-width: fit-content;
+    max-height: 210px;
 }
-
+#banner-slider {
+    padding: 0!important;
+}
 #banner-slider * {
     color: black;
 }
