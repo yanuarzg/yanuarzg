@@ -1,17 +1,44 @@
 document.querySelectorAll('.news-subdomain-title').forEach(span => {
-    // Ambil teks dan hilangkan spasi tambahan
     const city = span.textContent.trim();
     
-    // Pastikan hanya memproses jika belum ada link di dalamnya
     if (span.children.length === 0) {
         const link = document.createElement('a');
         
-        // Mengubah teks menjadi lowercase untuk URL (misal: Tangsel -> tangsel)
         link.href = `https://${city.toLowerCase()}.harianexpress.com`;
         link.textContent = city;
         
-        // Kosongkan isi span dan masukkan link yang baru dibuat
         span.textContent = '';
         span.appendChild(link);
     }
 });
+
+(function () {
+  const hostname = window.location.hostname;
+  const parts = hostname.split(".");
+  const sub = (parts.length >= 3 && parts[0] !== "www") ? parts[0] : null;
+
+  if (sub) {
+    localStorage.setItem("he_last_sub", sub);
+  }
+
+  const patchLinks = () => {
+    const savedSub = localStorage.getItem("he_last_sub");
+    if (!savedSub) return;
+
+    document.querySelectorAll('a[href*="harianexpress.com/indeks/"]').forEach((a) => {
+      try {
+        const url = new URL(a.href);
+        if (!url.searchParams.get("ref")) {
+          url.searchParams.set("ref", savedSub);
+          a.href = url.toString();
+        }
+      } catch (e) {}
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", patchLinks);
+  } else {
+    patchLinks();
+  }
+})();
