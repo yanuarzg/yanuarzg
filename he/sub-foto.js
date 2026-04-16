@@ -6,9 +6,14 @@
     );
     if (!images.length) return;
 
-    const gallery = document.createElement('div');
-    gallery.id = 'lb-gallery';
-    gallery.className = 'lb-gallery';
+const contgal = document.querySelector('.jl_sifea_img');
+const gallery = document.createElement('div');
+gallery.id = 'lb-gallery';
+gallery.className = 'lb-gallery';
+
+if (contgal) {
+  contgal.appendChild(gallery); // masukkan gallery ke dalam .jl_sifea_img
+}
 
     const container = images[0].closest('.entry-content, .post-content, .post-body, .post_content.jl_content');
     if (container) container.prepend(gallery);
