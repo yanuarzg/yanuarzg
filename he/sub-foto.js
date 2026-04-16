@@ -6,17 +6,18 @@
     );
     if (!images.length) return;
 
-const contgal = document.querySelector('.jl_sifea_img');
 const gallery = document.createElement('div');
 gallery.id = 'lb-gallery';
 gallery.className = 'lb-gallery';
 
+const contgal = document.querySelector('.jl_sifea_img');
 if (contgal) {
-  contgal.appendChild(gallery); // masukkan gallery ke dalam .jl_sifea_img
+  contgal.appendChild(gallery);
+} else {
+  // Fallback jika .jl_sifea_img tidak ditemukan
+  const container = images[0].closest('.entry-content, .post-content, .post-body, .post_content.jl_content');
+  if (container) container.prepend(gallery);
 }
-
-    const container = images[0].closest('.entry-content, .post-content, .post-body, .post_content.jl_content');
-    if (container) container.prepend(gallery);
 
     const lightbox    = document.getElementById('lightbox');
     const lbImg       = document.getElementById('lightbox-img');
